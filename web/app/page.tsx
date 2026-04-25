@@ -122,7 +122,8 @@ export default function Home() {
               className={`${styles.threadItem} ${activeThread?.id === thread.id ? styles.active : ''}`}
               onClick={() => {
                 setActiveThread(thread);
-                client.markRead(thread.id);
+                client.selectNpc(thread.npcId);
+                client.markRead(thread.npcId);
               }}
             >
               <div className={styles.threadName}>{thread.npcName}</div>
