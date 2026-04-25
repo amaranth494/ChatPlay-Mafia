@@ -11,4 +11,3 @@
     "start": "cd web && npm run start"
   }
 }
-}
