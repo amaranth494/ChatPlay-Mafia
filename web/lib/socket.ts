@@ -121,7 +121,7 @@ class ChatPlayClient {
 
   send(event: ClientEvent): void {
     if (this.socket) {
-      console.log('[Socket] Sending event:', event.type, event.data);
+      console.log('[Socket] Sending event:', event.type, 'data' in event ? event.data : '');
       this.socket.emit('message', event);
     }
   }
