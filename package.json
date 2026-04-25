@@ -1,0 +1,16 @@
+{
+  "name": "chatplay-mafia",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "install:backend": "cd backend && npm install",
+    "install:web": "cd web && npm install",
+    "build:backend": "cd backend && npm run build",
+    "build:web": "cd web && npm run build",
+    "start:backend": "cd backend && npm run start",
+    "start:web": "cd web && npm run start"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
