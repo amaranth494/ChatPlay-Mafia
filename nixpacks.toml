@@ -1,6 +1,8 @@
 [build]
-buildCommand = "npm install && npm run build"
-startCommand = "npm run start"
+node_version = "22"
 
-[deploy]
-rootDirectory = "backend"
+[build.buildCommand]
+override = "npm install && npm run build"
+
+[start]
+override = "npm run start"
