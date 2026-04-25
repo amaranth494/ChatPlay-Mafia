@@ -9,7 +9,7 @@
     "build": "cd backend && npm run build && cd ../web && npm run build",
     "build:backend": "cd backend && npm run build",
     "build:web": "cd web && npm run build",
-    "start": "npm run start:backend & npm run start:web",
+    "start": "npm run start:backend & npm run start:web & wait",
     "start:backend": "cd backend && npm run start",
     "start:web": "cd web && npm run start"
   }

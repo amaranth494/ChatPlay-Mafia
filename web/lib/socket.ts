@@ -44,8 +44,9 @@ class ChatPlayClient {
   connect(serverUrl: string = process.env.NEXT_PUBLIC_API_URL || 'https://chatplay-mafia-production.up.railway.app'): Promise<void> {
     return new Promise((resolve, reject) => {
       this.socket = io(serverUrl, {
-        transports: ['websocket'],
+        transports: ['websocket', 'polling'],
         autoConnect: true,
+        path: '/socket.io'
       });
 
       this.socket.on('connect', () => {

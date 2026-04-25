@@ -7,11 +7,16 @@ dotenv.config();
 
 const app = express();
 const httpServer = createServer(app);
+
+const PORT = process.env.PORT || 3001;
+const WS_PATH = process.env.WS_PATH || '/socket.io';
+
 const io = new Server(httpServer, {
   cors: {
     origin: '*',
     methods: ['GET', 'POST']
-  }
+  },
+  path: WS_PATH
 });
 
 interface ConnectedClient {
@@ -33,13 +38,11 @@ io.on('connection', (socket) => {
     
     switch (event.type) {
       case 'join_game':
-        // For MVP, create a temporary player/family
         const playerId = `player_${socket.id.slice(0, 8)}`;
         const familyId = `family_${socket.id.slice(0, 8)}`;
         
         clients.set(socket.id, { playerId, familyId });
         
-        // Send initial threads (mock for MVP)
         socket.emit('message', {
           type: 'thread_update',
           data: [
@@ -70,7 +73,6 @@ io.on('connection', (socket) => {
           ]
         });
 
-        // Send game state
         socket.emit('message', {
           type: 'game_state',
           data: {
@@ -81,7 +83,6 @@ io.on('connection', (socket) => {
           }
         });
 
-        // Send initial Consiglieri greeting
         socket.emit('message', {
           type: 'npc_message',
           data: {
@@ -97,7 +98,6 @@ io.on('connection', (socket) => {
         if (client && event.data && typeof event.data === 'object' && 'content' in event.data) {
           const content = (event.data as { content: string }).content;
           
-          // For MVP, echo back via Consiglieri after a delay
           setTimeout(() => {
             socket.emit('message', {
               type: 'npc_message',
@@ -112,7 +112,6 @@ io.on('connection', (socket) => {
         break;
 
       case 'mark_read':
-        // Handle read receipts
         break;
     }
   });
@@ -122,8 +121,6 @@ io.on('connection', (socket) => {
     clients.delete(socket.id);
   });
 });
-
-const PORT = process.env.PORT || 3001;
 
 httpServer.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
