@@ -35,6 +35,7 @@ export type ServerEvent =
 export type ClientEvent =
   | { type: 'send_message'; data: PlayerMessage }
   | { type: 'join_game' }
+  | { type: 'select_npc'; data: { npcId: string } }
   | { type: 'mark_read'; data: { threadId: string } };
 
 class ChatPlayClient {
