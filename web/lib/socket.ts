@@ -119,8 +119,8 @@ class ChatPlayClient {
     this.send({ type: 'select_npc', data: { npcId } });
   }
 
-  markRead(npcId: string): void {
-    this.send({ type: 'mark_read', data: { npcId } });
+  markRead(threadId: string): void {
+    this.send({ type: 'mark_read', data: { threadId } });
   }
 
   get isConnected(): boolean {
