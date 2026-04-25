@@ -1,5 +1,7 @@
 import { io, Socket } from 'socket.io-client';
 
+console.log('[Socket] Socket client loaded');
+
 export interface PlayerMessage {
   content: string;
 }
@@ -8,6 +10,19 @@ export interface NpcMessage {
   npcId: string;
   content: string;
   timestamp: string;
+  sender?: 'player' | 'npc';
+}
+
+export interface ThreadMessage {
+  id: string;
+  sender: 'player' | 'npc';
+  content: string;
+  timestamp: string;
+}
+
+export interface ThreadHistory {
+  npcId: string;
+  messages: ThreadMessage[];
 }
 
 export interface Thread {
@@ -28,6 +43,7 @@ export interface GameState {
 
 export type ServerEvent =
   | { type: 'npc_message'; data: NpcMessage }
+  | { type: 'thread_history'; data: ThreadHistory }
   | { type: 'game_state'; data: GameState }
   | { type: 'thread_update'; data: Thread[] }
   | { type: 'error'; data: { message: string } };
@@ -44,6 +60,7 @@ class ChatPlayClient {
 
   connect(serverUrl: string = ''): Promise<void> {
     const url = serverUrl || (typeof window !== 'undefined' ? window.location.origin : '');
+    console.log('[Socket] Connecting to:', url);
     return new Promise((resolve, reject) => {
       this.socket = io(url, {
         transports: ['polling', 'websocket'],
@@ -52,20 +69,21 @@ class ChatPlayClient {
       });
 
       this.socket.on('connect', () => {
-        console.log('Connected to server');
+        console.log('[Socket] Connected to server');
         resolve();
       });
 
       this.socket.on('connect_error', (error) => {
-        console.error('Connection error:', error);
+        console.error('[Socket] Connection error:', error);
         reject(error);
       });
 
       this.socket.on('disconnect', () => {
-        console.log('Disconnected from server');
+        console.log('[Socket] Disconnected from server');
       });
 
       this.socket.on('message', (event: ServerEvent) => {
+        console.log('[Socket] Received event:', event.type, event.data);
         const handlers = this.handlers.get(event.type);
         if (handlers) {
           handlers.forEach(handler => handler(event.data));
@@ -103,11 +121,13 @@ class ChatPlayClient {
 
   send(event: ClientEvent): void {
     if (this.socket) {
+      console.log('[Socket] Sending event:', event.type, event.data);
       this.socket.emit('message', event);
     }
   }
 
   joinGame(): void {
+    console.log('[Socket] Sending join_game');
     this.send({ type: 'join_game' });
   }
 
@@ -116,6 +136,7 @@ class ChatPlayClient {
   }
 
   selectNpc(npcId: string): void {
+    console.log('[Socket] Sending select_npc:', npcId);
     this.send({ type: 'select_npc', data: { npcId } });
   }
 

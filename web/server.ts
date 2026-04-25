@@ -28,14 +28,23 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
 
+interface Message {
+  id: string;
+  sender: 'player' | 'npc';
+  content: string;
+  timestamp: string;
+}
+
 interface NpcState {
   id: string;
   name: string;
   role: string;
   personality: string;
-  lastMessage: string;
+  messages: Message[];
   messageCount: number;
 }
+
+console.log('[Server] Initializing NPC states');
 
 const npcs: Record<string, NpcState> = {
   npc_consiglieri: {
@@ -43,15 +52,15 @@ const npcs: Record<string, NpcState> = {
     name: 'Consigliere',
     role: 'Advisor',
     personality: 'Wary, strategic, speaks in measured tones. Always thinks three moves ahead.',
-    lastMessage: '',
+    messages: [],
     messageCount: 0
   },
   npc_luca: {
-    id: 'npcluca',
+    id: 'npc_luca',
     name: 'Luca "The Blade"',
     role: 'Enforcer',
     personality: 'Short-tempered, violent, loyal but unpredictable. Speaks bluntly.',
-    lastMessage: '',
+    messages: [],
     messageCount: 0
   },
   npc_marco: {
@@ -59,7 +68,7 @@ const npcs: Record<string, NpcState> = {
     name: 'Marco',
     role: 'Soldier',
     personality: 'Nervous, eager to please, relatively new to the family. Speaks formally.',
-    lastMessage: '',
+    messages: [],
     messageCount: 0
   }
 };
@@ -73,10 +82,10 @@ interface ConnectedClient {
 const clients = new Map<string, ConnectedClient>();
 
 io.on('connection', (socket) => {
-  console.log('Client connected:', socket.id);
+  console.log('[Server] Client connected:', socket.id);
 
   socket.on('message', async (event: { type: string; data?: unknown }) => {
-    console.log('Received event:', event.type, event.data);
+    console.log('[Server] Received event:', event.type, event.data);
     
     switch (event.type) {
       case 'join_game': {
@@ -89,8 +98,10 @@ io.on('connection', (socket) => {
           id: `thread_${npc.id}`,
           npcId: npc.id,
           npcName: npc.name,
-          lastMessageAt: npc.lastMessage ? new Date().toISOString() : new Date(Date.now() - 3600000).toISOString(),
-          unreadCount: npc.messageCount > 0 ? 1 : 0,
+          lastMessageAt: npc.messages.length > 0 
+            ? npc.messages[npc.messages.length - 1].timestamp 
+            : new Date(Date.now() - 3600000).toISOString(),
+          unreadCount: npc.messageCount,
           isArchive: false
         }));
 
@@ -109,12 +120,23 @@ io.on('connection', (socket) => {
           }
         });
 
+        // Send welcome message from Consigliere
+        const npc = npcs['npc_consiglieri'];
+        const welcomeMsg: Message = {
+          id: `msg_${Date.now()}`,
+          sender: 'npc',
+          content: "Boss, we've been waiting for you. Things have been... complicated while you were away. We need to discuss the situation with the territories. Meet me when you're ready.",
+          timestamp: new Date().toISOString()
+        };
+        npc.messages.push(welcomeMsg);
+        npc.messageCount++;
+
         socket.emit('message', {
           type: 'npc_message',
           data: {
-            npcId: 'npc_consiglieri',
-            content: "Boss, we've been waiting for you. Things have been... complicated while you were away. We need to discuss the situation with the territories. Meet me when you're ready.",
-            timestamp: new Date().toISOString()
+            npcId: npc.id,
+            content: welcomeMsg.content,
+            timestamp: welcomeMsg.timestamp
           }
         });
         break;
@@ -124,15 +146,22 @@ io.on('connection', (socket) => {
         const client = clients.get(socket.id);
         if (client && event.data && typeof event.data === 'object' && 'npcId' in event.data) {
           client.selectedNpc = (event.data as { npcId: string }).npcId;
+          console.log('[Server] Client selected NPC:', client.selectedNpc);
           
           const npc = npcs[client.selectedNpc];
-          if (npc && npc.lastMessage) {
+          if (npc) {
+            console.log('[Server] Sending thread history:', npc.messages.length, 'messages');
+            // Send full thread history
             socket.emit('message', {
-              type: 'npc_message',
+              type: 'thread_history',
               data: {
                 npcId: npc.id,
-                content: npc.lastMessage,
-                timestamp: new Date().toISOString()
+                messages: npc.messages.map(m => ({
+                  id: m.id,
+                  sender: m.sender,
+                  content: m.content,
+                  timestamp: m.timestamp
+                }))
               }
             });
           }
@@ -147,6 +176,8 @@ io.on('connection', (socket) => {
           const npcId = client.selectedNpc || 'npc_consiglieri';
           const npc = npcs[npcId];
           
+          console.log('[Server] Processing message for NPC:', npcId);
+          
           if (npc && process.env.OPENAI_API_KEY) {
             try {
               const completion = await openai.chat.completions.create({
@@ -160,7 +191,19 @@ io.on('connection', (socket) => {
               
               const response = completion.choices[0]?.message?.content || "I understand, Boss.";
               
-              npc.lastMessage = response;
+              // Add to history
+              npc.messages.push({
+                id: `msg_${Date.now()}_player`,
+                sender: 'player',
+                content,
+                timestamp: new Date().toISOString()
+              });
+              npc.messages.push({
+                id: `msg_${Date.now()}_npc`,
+                sender: 'npc',
+                content: response,
+                timestamp: new Date().toISOString()
+              });
               npc.messageCount++;
               
               socket.emit('message', {
@@ -174,7 +217,19 @@ io.on('connection', (socket) => {
             } catch (err) {
               console.error('OpenAI error:', err);
               const fallback = `I hear you, Boss. "${content.substring(0, 30)}..." - we'll discuss this further.`;
-              npc.lastMessage = fallback;
+              
+              npc.messages.push({
+                id: `msg_${Date.now()}_player`,
+                sender: 'player',
+                content,
+                timestamp: new Date().toISOString()
+              });
+              npc.messages.push({
+                id: `msg_${Date.now()}_npc`,
+                sender: 'npc',
+                content: fallback,
+                timestamp: new Date().toISOString()
+              });
               npc.messageCount++;
               
               socket.emit('message', {
@@ -188,7 +243,19 @@ io.on('connection', (socket) => {
             }
           } else {
             const fallback = `I understand, Boss. "${content.substring(0, 30)}..." - we'll discuss this.`;
-            npc.lastMessage = fallback;
+            
+            npc.messages.push({
+              id: `msg_${Date.now()}_player`,
+              sender: 'player',
+              content,
+              timestamp: new Date().toISOString()
+            });
+            npc.messages.push({
+              id: `msg_${Date.now()}_npc`,
+              sender: 'npc',
+              content: fallback,
+              timestamp: new Date().toISOString()
+            });
             npc.messageCount++;
             
             socket.emit('message', {
@@ -207,7 +274,9 @@ io.on('connection', (socket) => {
               id: `thread_${n.id}`,
               npcId: n.id,
               npcName: n.name,
-              lastMessageAt: new Date().toISOString(),
+              lastMessageAt: n.messages.length > 0 
+                ? n.messages[n.messages.length - 1].timestamp 
+                : new Date().toISOString(),
               unreadCount: n.messageCount,
               isArchive: false
             }))
@@ -221,6 +290,8 @@ io.on('connection', (socket) => {
         if (client && event.data && typeof event.data === 'object' && 'threadId' in event.data) {
           const threadId = (event.data as { threadId: string }).threadId;
           const npcId = threadId.replace('thread_', '');
+          console.log('[Server] Marking thread as read:', npcId);
+          
           if (npcs[npcId]) {
             npcs[npcId].messageCount = 0;
           }
@@ -231,7 +302,9 @@ io.on('connection', (socket) => {
               id: `thread_${n.id}`,
               npcId: n.id,
               npcName: n.name,
-              lastMessageAt: n.lastMessage ? new Date().toISOString() : new Date(Date.now() - 3600000).toISOString(),
+              lastMessageAt: n.messages.length > 0 
+                ? n.messages[n.messages.length - 1].timestamp 
+                : new Date(Date.now() - 3600000).toISOString(),
               unreadCount: n.messageCount,
               isArchive: false
             }))

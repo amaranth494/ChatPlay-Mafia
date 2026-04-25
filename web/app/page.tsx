@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { client, Thread, NpcMessage } from '@/lib/socket';
+import { client, Thread, NpcMessage, ThreadHistory } from '@/lib/socket';
 import styles from './page.module.css';
 
 interface Message {
@@ -22,7 +22,9 @@ export default function Home() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    // Handle incoming NPC message (single response)
     client.on('npc_message', (data: NpcMessage) => {
+      console.log('[Client] Received npc_message:', data);
       if (activeThread && data.npcId === activeThread.npcId) {
         setMessages(prev => [...prev, {
           id: crypto.randomUUID(),
@@ -39,7 +41,23 @@ export default function Home() {
       ));
     });
 
+    // Handle thread history (full conversation when switching threads)
+    client.on('thread_history', (data: ThreadHistory) => {
+      console.log('[Client] Received thread_history:', data.messages.length, 'messages for NPC:', data.npcId);
+      if (activeThread && data.npcId === activeThread.npcId) {
+        const historyMessages: Message[] = data.messages.map(m => ({
+          id: m.id,
+          senderType: m.sender as 'player' | 'npc',
+          senderName: m.sender === 'player' ? 'You' : activeThread.npcName,
+          content: m.content,
+          timestamp: m.timestamp
+        }));
+        setMessages(historyMessages);
+      }
+    });
+
     client.on('thread_update', (data: Thread[]) => {
+      console.log('[Client] Received thread_update:', data.length, 'threads');
       setThreads(data);
     });
 
