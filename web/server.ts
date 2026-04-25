@@ -85,7 +85,11 @@ io.on('connection', (socket) => {
   console.log('[Server] Client connected:', socket.id);
 
   socket.on('message', async (event: { type: string; data?: unknown }) => {
-    console.log('[Server] Received event:', event.type, event.data);
+    console.log('[Server] Received event:', event.type, JSON.stringify(event.data));
+    
+    if (event.type === 'select_npc') {
+      console.log('[Server] Processing select_npc event');
+    }
     
     switch (event.type) {
       case 'join_game': {
@@ -143,6 +147,7 @@ io.on('connection', (socket) => {
       }
 
       case 'select_npc': {
+        console.log('[Server] Processing select_npc case');
         const client = clients.get(socket.id);
         if (client && event.data && typeof event.data === 'object' && 'npcId' in event.data) {
           client.selectedNpc = (event.data as { npcId: string }).npcId;
@@ -150,6 +155,7 @@ io.on('connection', (socket) => {
           
           const npc = npcs[client.selectedNpc];
           if (npc) {
+            console.log('[Server] Found NPC, messages:', npc.messages.length);
             console.log('[Server] Sending thread history:', npc.messages.length, 'messages');
             // Send full thread history
             socket.emit('message', {
@@ -164,7 +170,11 @@ io.on('connection', (socket) => {
                 }))
               }
             });
+          } else {
+            console.log('[Server] NPC not found:', client.selectedNpc);
           }
+        } else {
+          console.log('[Server] Invalid select_npc event data');
         }
         break;
       }
