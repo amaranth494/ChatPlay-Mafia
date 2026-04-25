@@ -43,7 +43,7 @@ export default function Home() {
 
     // Handle thread history (full conversation when switching threads)
     client.on('thread_history', (data: ThreadHistory) => {
-      console.log('[Client] Received thread_history:', data.messages.length, 'messages for NPC:', data.npcId);
+      console.log('[Client] Received thread_history:', data);
       if (activeThread && data.npcId === activeThread.npcId) {
         const historyMessages: Message[] = data.messages.map(m => ({
           id: m.id,
@@ -52,6 +52,7 @@ export default function Home() {
           content: m.content,
           timestamp: m.timestamp
         }));
+        console.log('[Client] Setting messages:', historyMessages.length);
         setMessages(historyMessages);
       }
     });
@@ -139,7 +140,10 @@ export default function Home() {
               onClick={() => {
                 setActiveThread(thread);
                 client.selectNpc(thread.npcId);
-                client.markRead(thread.id);
+                // Delay markRead to avoid socket issues
+                setTimeout(() => {
+                  client.markRead(thread.id);
+                }, 100);
               }}
             >
               <div className={styles.threadName}>{thread.npcName}</div>
