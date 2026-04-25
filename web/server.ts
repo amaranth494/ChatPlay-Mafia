@@ -4,8 +4,8 @@ import { parse } from 'url';
 import { Server as SocketIOServer } from 'socket.io';
 
 const dev = process.env.NODE_ENV !== 'production';
-const hostname = 'localhost';
-const port = parseInt(process.env.PORT || '3000', 10);
+const hostname = '0.0.0.0';
+const port = parseInt(process.env.PORT || process.env.RAILWAY_TCP_APPLICATION_PORT || '3000', 10);
 
 const app = createNext({ dev, hostname, port });
 const handle = app.getRequestHandler();
