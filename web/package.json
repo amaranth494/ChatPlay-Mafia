@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "npx tsx server.ts",
+    "start": "WEB_PORT=$PORT npx tsx server.ts",
     "lint": "eslint"
   },
   "dependencies": {
