@@ -201,7 +201,7 @@ io.on('connection', (socket) => {
             });
           }
           
-          io.emit('message', {
+          socket.emit('message', {
             type: 'thread_update',
             data: Object.values(npcs).map(n => ({
               id: `thread_${n.id}`,
@@ -218,13 +218,14 @@ io.on('connection', (socket) => {
 
       case 'mark_read': {
         const client = clients.get(socket.id);
-        if (client && event.data && typeof event.data === 'object' && 'npcId' in event.data) {
-          const npcId = (event.data as { npcId: string }).npcId;
+        if (client && event.data && typeof event.data === 'object' && 'threadId' in event.data) {
+          const threadId = (event.data as { threadId: string }).threadId;
+          const npcId = threadId.replace('thread_', '');
           if (npcs[npcId]) {
             npcs[npcId].messageCount = 0;
           }
           
-          io.emit('message', {
+          socket.emit('message', {
             type: 'thread_update',
             data: Object.values(npcs).map(n => ({
               id: `thread_${n.id}`,

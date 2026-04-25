@@ -65,20 +65,18 @@ export default function Home() {
   };
 
   const handleSend = async () => {
-    if (!input.trim() || sending) return;
+    if (!input.trim() || sending || !activeThread) return;
     
     setSending(true);
     client.sendMessage(input);
     
-    if (activeThread) {
-      setMessages(prev => [...prev, {
-        id: crypto.randomUUID(),
-        senderType: 'player',
-        senderName: 'You',
-        content: input,
-        timestamp: new Date().toISOString()
-      }]);
-    }
+    setMessages(prev => [...prev, {
+      id: crypto.randomUUID(),
+      senderType: 'player',
+      senderName: 'You',
+      content: input,
+      timestamp: new Date().toISOString()
+    }]);
     
     setInput('');
     setSending(false);
@@ -123,7 +121,7 @@ export default function Home() {
               onClick={() => {
                 setActiveThread(thread);
                 client.selectNpc(thread.npcId);
-                client.markRead(thread.npcId);
+                client.markRead(thread.id);
               }}
             >
               <div className={styles.threadName}>{thread.npcName}</div>
@@ -161,7 +159,9 @@ export default function Home() {
               <h3>{activeThread.npcName}</h3>
             </div>
             <div className={styles.messageList}>
-              {messages.map(msg => (
+              {messages.filter(msg => 
+                msg.senderType === 'player' || (activeThread && msg.senderName === activeThread.npcName)
+              ).map(msg => (
                 <div
                   key={msg.id}
                   className={`${styles.message} ${msg.senderType === 'player' ? styles.playerMessage : styles.npcMessage}`}
