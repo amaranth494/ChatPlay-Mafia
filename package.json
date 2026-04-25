@@ -2,6 +2,9 @@
   "name": "chatplay-mafia",
   "version": "1.0.0",
   "private": true,
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "install": "cd backend && npm install && cd ../web && npm install",
     "install:backend": "cd backend && npm install",

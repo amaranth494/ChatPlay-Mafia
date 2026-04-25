@@ -1,8 +1,6 @@
 [build]
-node_version = "22"
+buildCommand = "npm install && npm run build"
+startCommand = "npm run start"
 
-[build.buildCommand]
-override = "npm install && npm run build"
-
-[start]
-override = "npm run start"
+[deps]
+node = "22"
