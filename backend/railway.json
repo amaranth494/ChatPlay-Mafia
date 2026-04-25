@@ -1,0 +1,13 @@
+{
+  "$schema": "https://railway.app/schema.json",
+  "name": "chatplay-mafia",
+  "build": {
+    "builder": "NIXPACKS",
+    "buildPack": "npm",
+    "buildCommand": "npm install && npm run build",
+    "startCommand": "npm run start"
+  },
+  "run": {
+    "port": 3001
+  }
+}
