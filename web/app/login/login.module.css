@@ -192,3 +192,11 @@
   color: #444;
   margin: 0 0.5rem;
 }
+
+.smsDisclaimer {
+  color: #666;
+  font-size: 0.75rem;
+  text-align: center;
+  font-style: italic;
+  margin: 0.5rem 0;
+}

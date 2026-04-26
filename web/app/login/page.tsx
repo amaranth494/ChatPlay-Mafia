@@ -168,6 +168,10 @@ export default function LoginPage() {
               autoFocus
             />
             
+            <p className={styles.smsDisclaimer}>
+              By continuing, you agree to receive text messages. Standard carrier rates may apply.
+            </p>
+            
             <button 
               onClick={handleSendOtp} 
               className={styles.button}
