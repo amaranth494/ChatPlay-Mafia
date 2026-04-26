@@ -14,10 +14,11 @@ interface Message {
 }
 
 export default function Home() {
-  const { user, isAuthenticated, isLoading } = useAuth();
+  const { user, isAuthenticated, isLoading, logout } = useAuth();
   const [connected, setConnected] = useState(false);
   const [threads, setThreads] = useState<Thread[]>([]);
   const [activeThread, setActiveThread] = useState<Thread | null>(null);
+  const [showUserMenu, setShowUserMenu] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
@@ -154,86 +155,33 @@ export default function Home() {
       <div className={styles.container}>
         <div className={styles.login}>
           <p>Loading...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!isAuthenticated) {
-    return (
-      <div className={styles.container}>
-        <div className={styles.login}>
-          <h1>ChatPlay Mafia</h1>
-          <p>Please sign in to continue.</p>
-          <a href="/login">
-            <button className={styles.connectButton}>
-              Sign In
-            </button>
-          </a>
-        </div>
-      </div>
-    );
-  }
-
-  if (!connected) {
-    return (
-      <div className={styles.container}>
-        <div className={styles.login}>
-          <h1>ChatPlay Mafia</h1>
-          <p>Welcome back, Boss.</p>
-          <button onClick={handleConnect} className={styles.connectButton}>
-            Enter the Family
+<div className={styles.userMenu}>
+          <button 
+            className={styles.userMenuButton}
+            onClick={() => setShowUserMenu(!showUserMenu)}
+          >
+            <span className={styles.userIcon}>👤</span>
+            <span className={styles.userEmail}>{user?.email}</span>
+            <span className={styles.menuArrow}>{showUserMenu ? '▲' : '▼'}</span>
           </button>
+          
+          {showUserMenu && (
+            <div className={styles.dropdownMenu}>
+              <a href="/profile" className={styles.menuItem}>View Profile</a>
+              <button 
+                className={styles.menuItem} 
+                onClick={() => {
+                  logout();
+                  window.location.href = '/login';
+                }}
+              >
+                Logout
+              </button>
+            </div>
+          )}
         </div>
       </div>
-    );
-  }
-
-  return (
-    <div className={styles.container}>
-      <div className={styles.sidebar}>
-        <div className={styles.sidebarHeader}>
-          <h2>Messages</h2>
-        </div>
-        <div className={styles.threadList}>
-          {threads.filter(t => !t.isArchive).map(thread => (
-            <div
-              key={thread.id}
-              className={`${styles.threadItem} ${activeThread?.id === thread.id ? styles.active : ''}`}
-              onClick={() => {
-                setActiveThread(thread);
-                client.selectNpc(thread.npcId);
-              }}
-            >
-              <div className={styles.threadName}>{thread.npcName}</div>
-              <div className={styles.threadPreview}>
-                {thread.unreadCount > 0 && (
-                  <span className={styles.unread}>{thread.unreadCount}</span>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-        {threads.some(t => t.isArchive) && (
-          <>
-            <div className={styles.sidebarHeader}>
-              <h2>Archive</h2>
-            </div>
-            <div className={styles.threadList}>
-              {threads.filter(t => t.isArchive).map(thread => (
-                <div
-                  key={thread.id}
-                  className={`${styles.threadItem} ${styles.archive} ${activeThread?.id === thread.id ? styles.active : ''}`}
-                  onClick={() => setActiveThread(thread)}
-                >
-                  <div className={styles.threadName}>{thread.npcName}</div>
-                </div>
-              ))}
-            </div>
-          </>
-        )}
-      </div>
-      <div className={styles.chat}>
+      <div className={styles.chat}}
         {activeThread ? (
           <>
             <div className={styles.chatHeader}>

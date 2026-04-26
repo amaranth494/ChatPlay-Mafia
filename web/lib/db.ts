@@ -28,11 +28,63 @@ export async function testConnection(): Promise<boolean> {
   }
 }
 
+// Add migration to ensure all columns exist
+async function runMigrations(): Promise<void> {
+  const client = await pool.connect();
+  try {
+    // Check and add columns to users table
+    const columnsToAdd = [
+      { name: 'first_name', type: 'VARCHAR(100)' },
+      { name: 'last_name', type: 'VARCHAR(100)' },
+      { name: 'registered', type: 'BOOLEAN DEFAULT FALSE' },
+      { name: 'family_name', type: 'VARCHAR(100)' },
+      { name: 'title', type: 'VARCHAR(50)' },
+      { name: 'gender', type: 'VARCHAR(20)' },
+      { name: 'sexual_preference', type: 'VARCHAR(20)' },
+      { name: 'registered_at', type: 'TIMESTAMP' },
+    ];
+    
+    for (const col of columnsToAdd) {
+      try {
+        await client.query(
+          `ALTER TABLE users ADD COLUMN IF NOT EXISTS ${col.name} ${col.type}`
+        );
+      } catch (e) {
+        // Column might already exist
+      }
+    }
+    
+    console.log('[DB] Migrations complete');
+  } catch (err) {
+    console.error('[DB] Migration error:', err);
+  } finally {
+    client.release();
+  }
+}
+
 export async function initDatabase(): Promise<void> {
   console.log('[DB] Initializing database tables...');
   
   const client = await pool.connect();
   try {
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        email VARCHAR(255) UNIQUE,
+        phone VARCHAR(50) UNIQUE,
+        first_name VARCHAR(100),
+        last_name VARCHAR(100),
+        registered BOOLEAN DEFAULT FALSE,
+        family_name VARCHAR(100),
+        title VARCHAR(50),
+        gender VARCHAR(20),
+        sexual_preference VARCHAR(20),
+        registered_at TIMESTAMP,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+    
     await client.query(`
       CREATE TABLE IF NOT EXISTS threads (
         id SERIAL PRIMARY KEY,
@@ -50,24 +102,6 @@ export async function initDatabase(): Promise<void> {
         sender VARCHAR(20) NOT NULL,
         content TEXT NOT NULL,
         created_at TIMESTAMP DEFAULT NOW()
-      );
-    `);
-    
-    await client.query(`
-      CREATE TABLE IF NOT EXISTS users (
-        id SERIAL PRIMARY KEY,
-        email VARCHAR(255) UNIQUE,
-        phone VARCHAR(50) UNIQUE,
-        first_name VARCHAR(100),
-        last_name VARCHAR(100),
-        registered BOOLEAN DEFAULT FALSE,
-        family_name VARCHAR(100),
-        title VARCHAR(50),
-        gender VARCHAR(20),
-        sexual_preference VARCHAR(20),
-        registered_at TIMESTAMP,
-        created_at TIMESTAMP DEFAULT NOW(),
-        updated_at TIMESTAMP DEFAULT NOW()
       );
     `);
     
@@ -95,11 +129,15 @@ export async function initDatabase(): Promise<void> {
     `);
     
     console.log('[DB] Tables created successfully');
+    
+    // Run migrations
+    await runMigrations();
   } catch (err) {
     console.error('[DB] Init error:', err);
   } finally {
     client.release();
   }
+}
 }
 
 // Get or create thread for NPC and player
@@ -465,6 +503,96 @@ export async function getUserByPhone(phone: string): Promise<User | null> {
       [phone]
     );
     return result.rows[0] || null;
+  } finally {
+    client.release();
+  }
+}
+
+// Update user profile
+interface ProfileUpdate {
+  phone?: string;
+  firstName?: string;
+  lastName?: string;
+  familyName?: string;
+  title?: string;
+  gender?: string;
+  sexualPreference?: string;
+}
+
+export async function updateUserProfile(email: string, updates: ProfileUpdate): Promise<void> {
+  const client = await pool.connect();
+  try {
+    const setClauses: string[] = ['updated_at = NOW()'];
+    const values: any[] = [email];
+    let paramIndex = 2;
+
+    if (updates.phone !== undefined) {
+      setClauses.push(`phone = $${paramIndex++}`);
+      values.push(updates.phone || null);
+    }
+    if (updates.firstName !== undefined) {
+      setClauses.push(`first_name = $${paramIndex++}`);
+      values.push(updates.firstName || null);
+    }
+    if (updates.lastName !== undefined) {
+      setClauses.push(`last_name = $${paramIndex++}`);
+      values.push(updates.lastName || null);
+    }
+    if (updates.familyName !== undefined) {
+      setClauses.push(`family_name = $${paramIndex++}`);
+      values.push(updates.familyName || null);
+    }
+    if (updates.title !== undefined) {
+      setClauses.push(`title = $${paramIndex++}`);
+      values.push(updates.title || null);
+    }
+    if (updates.gender !== undefined) {
+      setClauses.push(`gender = $${paramIndex++}`);
+      values.push(updates.gender || null);
+    }
+    if (updates.sexualPreference !== undefined) {
+      setClauses.push(`sexual_preference = $${paramIndex++}`);
+      values.push(updates.sexualPreference || null);
+    }
+
+    await client.query(
+      `UPDATE users SET ${setClauses.join(', ')} WHERE email = $1`,
+      values
+    );
+  } finally {
+    client.release();
+  }
+}
+
+// Delete user and all associated data
+export async function deleteUser(email: string): Promise<void> {
+  const client = await pool.connect();
+  try {
+    // Get user ID first
+    const userResult = await client.query('SELECT id FROM users WHERE email = $1', [email]);
+    if (userResult.rows.length === 0) return;
+    
+    const userId = userResult.rows[0].id;
+
+    // Delete messages from user's threads
+    await client.query(
+      'DELETE FROM messages WHERE thread_id IN (SELECT id FROM threads WHERE player_id = $1)',
+      [`user_${userId}`]
+    );
+
+    // Delete threads
+    await client.query('DELETE FROM threads WHERE player_id = $1', [`user_${userId}`]);
+
+    // Delete passkey credentials
+    await client.query('DELETE FROM passkey_credentials WHERE user_id = $1', [userId]);
+
+    // Delete OTP codes
+    await client.query('DELETE FROM otp_codes WHERE user_id = $1', [userId]);
+
+    // Delete user
+    await client.query('DELETE FROM users WHERE email = $1', [email]);
+
+    console.log(`[DB] Deleted user and all data for: ${email}`);
   } finally {
     client.release();
   }
