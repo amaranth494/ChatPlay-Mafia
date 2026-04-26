@@ -21,6 +21,11 @@ import { sendOtpEmail as sendEmailOtp, sendSms as sendSmsOtp } from './email';
 const RP_NAME = 'ChatPlay Mafia';
 const RP_ID = 'chatplay-mafia-production.up.railway.app';
 const ORIGIN = 'https://chatplay-mafia-production.up.railway.app';
+
+function generateOtp(): string {
+  return Math.floor(100000 + Math.random() * 900000).toString();
+}
+
 async function sendEmailOtpCode(email: string, code: string): Promise<boolean> {
   if (!process.env.SMTP_HOST || !process.env.SMTP_USER) {
     console.log(`[Auth] SMTP not configured, OTP for ${email}: ${code}`);
