@@ -58,6 +58,12 @@ export async function initDatabase(): Promise<void> {
         id SERIAL PRIMARY KEY,
         email VARCHAR(255) UNIQUE,
         phone VARCHAR(50) UNIQUE,
+        registered BOOLEAN DEFAULT FALSE,
+        family_name VARCHAR(100),
+        title VARCHAR(50),
+        gender VARCHAR(20),
+        sexual_preference VARCHAR(20),
+        registered_at TIMESTAMP,
         created_at TIMESTAMP DEFAULT NOW(),
         updated_at TIMESTAMP DEFAULT NOW()
       );
@@ -329,6 +335,91 @@ export async function updatePasskeyCounter(credentialId: string, counter: number
     await client.query(
       'UPDATE passkey_credentials SET counter = $1 WHERE credential_id = $2',
       [counter, credentialId]
+    );
+  } finally {
+    client.release();
+  }
+}
+
+// ============ User Registration ============
+
+export interface UserProfile {
+  id: number;
+  email: string | null;
+  phone: string | null;
+  registered: boolean;
+  family_name: string | null;
+  title: string | null;
+  gender: string | null;
+  sexual_preference: string | null;
+  registered_at: Date | null;
+  created_at: Date;
+  updated_at: Date;
+}
+
+// Check if user is registered
+export async function isUserRegistered(email: string): Promise<boolean> {
+  const client = await pool.connect();
+  try {
+    const result = await client.query(
+      'SELECT registered FROM users WHERE email = $1',
+      [email]
+    );
+    if (result.rows.length === 0) return false;
+    return result.rows[0].registered === true;
+  } finally {
+    client.release();
+  }
+}
+
+// Get user profile
+export async function getUserProfile(email: string): Promise<UserProfile | null> {
+  const client = await pool.connect();
+  try {
+    const result = await client.query(
+      'SELECT * FROM users WHERE email = $1',
+      [email]
+    );
+    return result.rows[0] || null;
+  } finally {
+    client.release();
+  }
+}
+
+// Complete user registration
+export async function completeRegistration(
+  email: string,
+  familyName: string,
+  title: string,
+  gender: string,
+  sexualPreference: string
+): Promise<void> {
+  const client = await pool.connect();
+  try {
+    await client.query(
+      `UPDATE users SET 
+        registered = TRUE,
+        family_name = $2,
+        title = $3,
+        gender = $4,
+        sexual_preference = $5,
+        registered_at = NOW(),
+        updated_at = NOW()
+      WHERE email = $1`,
+      [email, familyName, title, gender, sexualPreference]
+    );
+  } finally {
+    client.release();
+  }
+}
+
+// Add phone to existing user
+export async function addUserPhone(email: string, phone: string): Promise<void> {
+  const client = await pool.connect();
+  try {
+    await client.query(
+      'UPDATE users SET phone = $2, updated_at = NOW() WHERE email = $1',
+      [email, phone]
     );
   } finally {
     client.release();

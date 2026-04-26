@@ -123,6 +123,31 @@ export default function Home() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // Check registration status on login
+  useEffect(() => {
+    if (!user?.email) return;
+    
+    const checkRegistration = async () => {
+      try {
+        const response = await fetch('/api/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'check_registration', email: user.email })
+        });
+        const result = await response.json();
+        
+        if (result.success && !result.isRegistered) {
+          // User is not registered - could show a prompt here
+          console.log('[Auth] User not registered:', user.email);
+        }
+      } catch (error) {
+        console.error('[Auth] Check registration error:', error);
+      }
+    };
+    
+    checkRegistration();
+  }, [user?.email]);
+
   // Redirect to login if not authenticated
   if (isLoading) {
     return (

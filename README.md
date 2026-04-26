@@ -20,6 +20,24 @@ Open http://localhost:3000
 
 ## Deploy to Railway
 
+**Using the deploy script (recommended):**
+
+```bash
+# Bash (Mac/Linux/WSL)
+./scripts/deploy.sh
+
+# PowerShell (Windows)
+.\scripts\deploy.ps1
+```
+
+This will:
+1. Build the frontend (`web/`)
+2. Build the backend (`backend/`)
+3. Push to GitHub `production` branch
+4. Deploy to Railway
+
+**Manual deployment:**
+
 1. **Create Railway project:**
    ```bash
    npm i -g @railway/cli
@@ -38,8 +56,11 @@ Open http://localhost:3000
    railway env set OPENAI_API_KEY=your_key_here
    ```
 
-4. **Deploy:**
+4. **Build and deploy:**
    ```bash
+   cd web && npm ci && npm run build
+   cd backend && npm ci && npm run build
+   git push origin production
    railway up
    ```
 

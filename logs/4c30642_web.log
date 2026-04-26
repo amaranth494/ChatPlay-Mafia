@@ -1,0 +1,31 @@
+﻿Starting Container
+> web@0.1.0 start
+> WEB_PORT=$PORT npx tsx server.ts
+
+npm warn config production Use `--omit=dev` instead.
+npm warn config production Use `--omit=dev` instead.
+
+> chatplay-mafia@1.0.0 start
+> cd web && npm run start
+
+npm warn config production Use `--omit=dev` instead.
+
+[DB] Configuring database connection...
+[Server] Starting...
+[Server] Database URL found, testing connection...
+[Server] Initializing NPC states
+ΓÜá Warning: Next.js inferred your workspace root, but it may not be correct.
+ We detected multiple lockfiles and selected the directory of /app/package-lock.json as the root directory.
+ To silence this warning, set `turbopack.root` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/turbopack#root-directory for more information.
+ Detected additional lockfiles: 
+   * /app/web/package-lock.json
+
+> Ready on http://0.0.0.0:8080
+[DB] Connected to database!
+[DB] Query result: { now: 2026-04-26T18:37:29.196Z }
+[Server] Database OK, initializing tables...
+[DB] Initializing database tables...
+[DB] Tables created successfully
+[DB] Configuring database connection...
+[Server] Γÿà Client connected: vIxaSi9JYDQmSva7AAAB

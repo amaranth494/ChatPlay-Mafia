@@ -110,10 +110,11 @@ io.on('connection', (socket) => {
     switch (event.type) {
       case 'join_game': {
         console.log('[Server] join_game START');
-        const playerId = `player_${socket.id.slice(0, 8)}`;
+        const eventData = event as { type: string; playerId?: string };
+        const clientPlayerId = eventData.playerId || `player_${socket.id.slice(0, 8)}`;
         const familyId = `family_${socket.id.slice(0, 8)}`;
         
-        clients.set(socket.id, { playerId, familyId, selectedNpc: null });
+        clients.set(socket.id, { playerId: clientPlayerId, familyId, selectedNpc: null });
         
         const threads = Object.values(npcs).map(npc => ({
           id: `thread_${npc.id}`,

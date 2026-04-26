@@ -200,3 +200,21 @@
   font-style: italic;
   margin: 0.5rem 0;
 }
+
+.registerButton {
+  background: #2a2a2a;
+  border: 1px solid #4a7c4a;
+  color: #8fba8f;
+  padding: 1rem 2rem;
+  font-family: inherit;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  letter-spacing: 0.1em;
+  width: 100%;
+}
+
+.registerButton:hover {
+  background: #3a3a3a;
+  border-color: #a8c8a8;
+}

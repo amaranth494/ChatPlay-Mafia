@@ -125,6 +125,16 @@ export default function LoginPage() {
             >
               Login with Passkey
             </button>
+            
+            <div className={styles.divider}>
+              <span>new user?</span>
+            </div>
+            
+            <a href="/register">
+              <button className={styles.registerButton}>
+                Register
+              </button>
+            </a>
           </div>
         )}
 
