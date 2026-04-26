@@ -71,7 +71,7 @@ export default function ProfilePage() {
     }
   };
 
-  const handleSave = async () => {
+  const handleSaveAccount = async () => {
     if (!user?.email) return;
 
     setLoading(true);
@@ -86,7 +86,37 @@ export default function ProfilePage() {
           email: user.email,
           phone: formData.phone,
           firstName: formData.firstName,
-          lastName: formData.lastName,
+          lastName: formData.lastName
+        }),
+      });
+      const result = await response.json();
+
+      setLoading(false);
+
+      if (result.success) {
+        setMessage('Account saved successfully!');
+      } else {
+        setMessage(result.message);
+      }
+    } catch (error) {
+      setLoading(false);
+      setMessage('Failed to save account');
+    }
+  };
+
+  const handleSaveGameProfile = async () => {
+    if (!user?.email) return;
+
+    setLoading(true);
+    setMessage('');
+
+    try {
+      const response = await fetch('/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'update_profile',
+          email: user.email,
           familyName: formData.familyName,
           title: formData.title,
           gender: formData.gender,
@@ -98,13 +128,13 @@ export default function ProfilePage() {
       setLoading(false);
 
       if (result.success) {
-        setMessage('Profile saved successfully!');
+        setMessage('Game profile saved successfully!');
       } else {
         setMessage(result.message);
       }
     } catch (error) {
       setLoading(false);
-      setMessage('Failed to save profile');
+      setMessage('Failed to save game profile');
     }
   };
 
@@ -163,7 +193,7 @@ export default function ProfilePage() {
         
         <div className={styles.options}>
           <p className={styles.subtitle}>
-            Manage your account information.
+            Manage your account and game information.
           </p>
           
           <div style={{ background: '#252525', padding: '1rem', marginTop: '1rem', borderRadius: '4px' }}>
@@ -203,6 +233,15 @@ export default function ProfilePage() {
             onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
             className={styles.input}
           />
+
+          <button 
+            onClick={handleSaveAccount} 
+            className={styles.button}
+            disabled={loading}
+            style={{ marginTop: '1.5rem' }}
+          >
+            {loading ? 'Saving...' : 'Save Account'}
+          </button>
 
           <div style={{ borderTop: '1px solid #333', marginTop: '2rem', paddingTop: '2rem' }}>
             <h3 style={{ fontSize: '1rem', fontWeight: 'normal', marginBottom: '1rem', color: '#888' }}>GAME PROFILE</h3>
@@ -245,16 +284,16 @@ export default function ProfilePage() {
               <option value="">Select preference</option>
               {sexualPreferences.map(s => <option key={s} value={s}>{s}</option>)}
             </select>
-          </div>
 
-          <button 
-            onClick={handleSave} 
-            className={styles.button}
-            disabled={loading}
-            style={{ marginTop: '2rem' }}
-          >
-            {loading ? 'Saving...' : 'Save Profile'}
-          </button>
+            <button 
+              onClick={handleSaveGameProfile} 
+              className={styles.button}
+              disabled={loading}
+              style={{ marginTop: '1.5rem' }}
+            >
+              {loading ? 'Saving...' : 'Save Game Profile'}
+            </button>
+          </div>
 
           <a href="/">
             <button 
