@@ -171,6 +171,12 @@ if (!connected) {
         <div className={styles.sidebarHeader}>
           <h2>Messages</h2>
         </div>
+        <button 
+          className={styles.familyInfoButton}
+          onClick={() => window.location.href = '/profile'}
+        >
+          👥 Family Info
+        </button>
         <div className={styles.threadList}>
           {threads.filter(t => !t.isArchive).map(thread => (
             <div
@@ -282,6 +288,7 @@ if (!connected) {
           )}
         </div>
       )}
-    </div>
+
+      </div>
   );
 }
