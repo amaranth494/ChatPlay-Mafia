@@ -185,15 +185,6 @@ case 'select_npc': {
         }
         break;
       }
-            });
-          } else {
-            console.log('[Server] NPC not found:', client.selectedNpc);
-          }
-        } else {
-          console.log('[Server] Invalid select_npc event data');
-        }
-        break;
-      }
 
       case 'send_message': {
         const client = clients.get(socket.id);
