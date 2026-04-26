@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useAuth } from '@/lib/auth-context';
 import { client, Thread, NpcMessage, ThreadHistory } from '@/lib/socket';
 import styles from './page.module.css';
 
@@ -13,6 +14,7 @@ interface Message {
 }
 
 export default function Home() {
+  const { user, isAuthenticated, isLoading } = useAuth();
   const [connected, setConnected] = useState(false);
   const [threads, setThreads] = useState<Thread[]>([]);
   const [activeThread, setActiveThread] = useState<Thread | null>(null);
@@ -86,7 +88,7 @@ export default function Home() {
     try {
       await client.connect();
       setConnected(true);
-      client.joinGame();
+      client.joinGame(user?.id.toString() || 'anonymous');
     } catch (error) {
       console.error('Failed to connect:', error);
     }
@@ -121,12 +123,39 @@ export default function Home() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // Redirect to login if not authenticated
+  if (isLoading) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.login}>
+          <p>Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.login}>
+          <h1>ChatPlay Mafia</h1>
+          <p>Please sign in to continue.</p>
+          <a href="/login">
+            <button className={styles.connectButton}>
+              Sign In
+            </button>
+          </a>
+        </div>
+      </div>
+    );
+  }
+
   if (!connected) {
     return (
       <div className={styles.container}>
         <div className={styles.login}>
           <h1>ChatPlay Mafia</h1>
-          <p>Connect to begin your reign.</p>
+          <p>Welcome back, Boss.</p>
           <button onClick={handleConnect} className={styles.connectButton}>
             Enter the Family
           </button>
