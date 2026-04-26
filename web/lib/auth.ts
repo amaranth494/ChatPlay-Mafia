@@ -1,29 +1,64 @@
 // @ts-nocheck
-import {
-  generateAuthenticationOptions,
-  verifyAuthenticationResponse,
-  generateRegistrationOptions,
-  verifyRegistrationResponse,
-} from '@simplewebauthn/server';
-import { isoBase64URL, isoUint8Array } from '@simplewebauthn/server/helpers';
-import {
-  getOrCreateUserByEmail,
-  getOrCreateUserByPhone,
-  getUserById,
-  getPasskeyCredentials,
-  storePasskeyCredential,
-  updatePasskeyCounter,
-  storeOtpCode,
-  verifyOtpCode,
-} from './db';
-import { sendOtpEmail, sendSms } from './email';
+// Internal function to actually send the email
+async function sendEmailOtpCode(email: string, code: string): Promise<boolean> {
+  if (!process.env.SMTP_HOST || !process.env.SMTP_USER) {
+    console.log(`[Auth] SMTP not configured, OTP for ${email}: ${code}`);
+    return false;
+  }
+  return await sendEmailOtp(email, code);
+}
 
-const RP_NAME = 'ChatPlay Mafia';
-const RP_ID = 'chatplay-mafia-production.up.railway.app';
-const ORIGIN = 'https://chatplay-mafia-production.up.railway.app';
+// Internal function to actually send the SMS
+async function sendSmsOtpCode(phone: string, code: string): Promise<boolean> {
+  if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_AUTH_TOKEN) {
+    console.log(`[Auth] Twilio not configured, OTP for ${phone}: ${code}`);
+    return false;
+  }
+  return await sendSmsOtp(phone, code);
+}
 
-function generateOtp(): string {
-  return Math.floor(100000 + Math.random() * 900000).toString();
+export async function sendOtpEmail(email: string): Promise<SendOtpResult> {
+  try {
+    const user = await getOrCreateUserByEmail(email);
+    const code = generateOtp();
+    await storeOtpCode(user.id, code, 'email');
+    
+    const sent = await sendEmailOtpCode(email, code);
+    
+    return {
+      success: true,
+      message: sent ? `Verification code sent to ${email}` : `Code: ${code}`,
+      userId: user.id,
+    };
+  } catch (error) {
+    console.error('[Auth] Send OTP error:', error);
+    return {
+      success: false,
+      message: 'Failed to send verification code',
+    };
+  }
+}
+
+export async function sendOtpSms(phone: string): Promise<SendOtpResult> {
+  try {
+    const user = await getOrCreateUserByPhone(phone);
+    const code = generateOtp();
+    await storeOtpCode(user.id, code, 'sms');
+    
+    const sent = await sendSmsOtpCode(phone, code);
+    
+    return {
+      success: true,
+      message: sent ? `Verification code sent to ${phone}` : `Code: ${code}`,
+      userId: user.id,
+    };
+  } catch (error) {
+    console.error('[Auth] Send OTP error:', error);
+    return {
+      success: false,
+      message: 'Failed to send verification code',
+    };
+  }
 }
 
 export interface SendOtpResult {
