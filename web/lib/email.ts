@@ -4,6 +4,9 @@ const getTransporter = () => {
   const port = parseInt(process.env.SMTP_PORT || '587');
   const isSecure = port === 465 || process.env.SMTP_SECURE === 'true';
   
+  console.log(`[Email] Creating transporter: ${process.env.SMTP_HOST}:${port}, secure=${isSecure}`);
+  console.log(`[Email] User: ${process.env.SMTP_USER}`);
+  
   return nodemailer.createTransport({
     host: process.env.SMTP_HOST,
     port: port,
@@ -13,8 +16,9 @@ const getTransporter = () => {
       user: process.env.SMTP_USER,
       pass: process.env.SMTP_PASS,
     },
-    connectionTimeout: 10000,
-    socketTimeout: 10000,
+    connectionTimeout: 30000,
+    socketTimeout: 30000,
+    debug: true,
   });
 };
 
@@ -28,10 +32,11 @@ export async function sendOtpEmail(to: string, code: string): Promise<boolean> {
     const transporter = getTransporter();
     
     // Verify connection first
+    console.log(`[Email] Verifying SMTP connection...`);
     await transporter.verify();
-    console.log(`[Email] SMTP connection verified`);
+    console.log(`[Email] SMTP connection verified successfully`);
     
-    const result = await transporter.sendMail({
+    const info = await transporter.sendMail({
       from: process.env.SMTP_FROM || 'noreply@chatplay-mafia.com',
       to,
       subject: 'Your ChatPlay Mafia Verification Code',
@@ -48,10 +53,13 @@ export async function sendOtpEmail(to: string, code: string): Promise<boolean> {
       `,
     });
     
-    console.log(`[Email] Sent OTP to ${to}:`, result.messageId);
+    console.log(`[Email] Message sent: ${info.messageId}`);
+    console.log(`[Email] Response: ${info.response}`);
     return true;
-  } catch (error) {
-    console.error('[Email] Failed to send email:', error);
+  } catch (error: any) {
+    console.error('[Email] Failed to send email:', error.message || error);
+    if (error.code) console.error('[Email] Error code:', error.code);
+    if (error.command) console.error('[Email] Command:', error.command);
     return false;
   }
 }
