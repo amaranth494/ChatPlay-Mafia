@@ -101,7 +101,7 @@ export default function Terms() {
       <h2>11. Contact</h2>
       <p>
         Questions about these terms?<br />
-        Contact us at: <strong>legal@chatplay-mafia.com</strong>
+        Contact us at: <strong>castle.and.clark@gmail.com</strong>
       </p>
 
       <div style={{ 
