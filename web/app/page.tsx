@@ -148,22 +148,14 @@ export default function Home() {
           </a>
         </div>
       </div>
-    );
+);
   }
 
-if (!connected) {
-    return (
-      <div className={styles.container}>
-        <div className={styles.login}>
-          <h1>ChatPlay Mafia</h1>
-          <p>Welcome back, Boss.</p>
-          <button onClick={handleConnect} className={styles.connectButton}>
-            Enter the Family
-          </button>
-        </div>
-      </div>
-    );
-  }
+  useEffect(() => {
+    if (isAuthenticated && !connected) {
+      handleConnect();
+    }
+  }, [isAuthenticated, connected, handleConnect]);
 
   return (
     <div className={styles.container}>
