@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/lib/auth-context';
-import styles from './login.module.css';
+import styles from '../login/login.module.css';
 
 interface RegisterData {
   familyName: string;
