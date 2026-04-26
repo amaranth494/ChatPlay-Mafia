@@ -189,11 +189,11 @@ export default function ProfilePage() {
   return (
     <div className={styles.container}>
       <div className={styles.loginBox} style={{ maxWidth: '500px' }}>
-        <h1>Your Profile</h1>
+        <h1>Your Account</h1>
         
         <div className={styles.options}>
           <p className={styles.subtitle}>
-            Manage your account and game information.
+            Your personal account information.
           </p>
           
           <div style={{ background: '#252525', padding: '1rem', marginTop: '1rem', borderRadius: '4px' }}>
@@ -242,58 +242,6 @@ export default function ProfilePage() {
           >
             {loading ? 'Saving...' : 'Save Account'}
           </button>
-
-          <div style={{ borderTop: '1px solid #333', marginTop: '2rem', paddingTop: '2rem' }}>
-            <h3 style={{ fontSize: '1rem', fontWeight: 'normal', marginBottom: '1rem', color: '#888' }}>GAME PROFILE</h3>
-            
-            <label style={{ display: 'block', color: '#888', fontSize: '0.875rem' }}>Family Name</label>
-            <input
-              type="text"
-              placeholder="Your mafia family name"
-              value={formData.familyName}
-              onChange={(e) => setFormData({ ...formData, familyName: e.target.value })}
-              className={styles.input}
-            />
-
-            <label style={{ display: 'block', marginTop: '1rem', color: '#888', fontSize: '0.875rem' }}>Your Title</label>
-            <select
-              value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              className={styles.input}
-            >
-              <option value="">Select title</option>
-              {titles.map(t => <option key={t} value={t}>{t}</option>)}
-            </select>
-
-            <label style={{ display: 'block', marginTop: '1rem', color: '#888', fontSize: '0.875rem' }}>Gender</label>
-            <select
-              value={formData.gender}
-              onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
-              className={styles.input}
-            >
-              <option value="">Select gender</option>
-              {genders.map(g => <option key={g} value={g}>{g}</option>)}
-            </select>
-
-            <label style={{ display: 'block', marginTop: '1rem', color: '#888', fontSize: '0.875rem' }}>Sexual Preference</label>
-            <select
-              value={formData.sexualPreference}
-              onChange={(e) => setFormData({ ...formData, sexualPreference: e.target.value })}
-              className={styles.input}
-            >
-              <option value="">Select preference</option>
-              {sexualPreferences.map(s => <option key={s} value={s}>{s}</option>)}
-            </select>
-
-            <button 
-              onClick={handleSaveGameProfile} 
-              className={styles.button}
-              disabled={loading}
-              style={{ marginTop: '1.5rem' }}
-            >
-              {loading ? 'Saving...' : 'Save Game Profile'}
-            </button>
-          </div>
 
           <a href="/">
             <button 

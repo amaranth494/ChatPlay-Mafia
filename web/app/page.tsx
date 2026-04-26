@@ -274,7 +274,7 @@ if (!connected) {
           </button>
           {showUserMenu && (
             <div className={styles.dropdownMenu}>
-              <a href="/profile" className={styles.menuItem}>View Profile</a>
+              <a href="/userprofile" className={styles.menuItem}>My Account</a>
               <button 
                 className={styles.menuItem} 
                 onClick={() => {
