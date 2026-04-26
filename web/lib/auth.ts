@@ -16,6 +16,7 @@ import {
   storeOtpCode,
   verifyOtpCode,
 } from './db';
+import { sendOtpEmail, sendSms } from './email';
 
 const RP_NAME = 'ChatPlay Mafia';
 const RP_ID = 'chatplay-mafia-production.up.railway.app';
@@ -37,11 +38,11 @@ export async function sendOtpEmail(email: string): Promise<SendOtpResult> {
     const code = generateOtp();
     await storeOtpCode(user.id, code, 'email');
     
-    console.log(`[Auth] OTP for ${email}: ${code}`);
+    const sent = await sendOtpEmailInternal(email, code);
     
     return {
       success: true,
-      message: `Verification code sent to ${email}`,
+      message: sent ? `Verification code sent to ${email}` : `Code: ${code} (check console in dev)`,
       userId: user.id,
     };
   } catch (error) {
@@ -59,11 +60,11 @@ export async function sendOtpSms(phone: string): Promise<SendOtpResult> {
     const code = generateOtp();
     await storeOtpCode(user.id, code, 'sms');
     
-    console.log(`[Auth] OTP for ${phone}: ${code}`);
+    const sent = await sendSmsInternal(phone, code);
     
     return {
       success: true,
-      message: `Verification code sent to ${phone}`,
+      message: sent ? `Verification code sent to ${phone}` : `Code: ${code} (check console in dev)`,
       userId: user.id,
     };
   } catch (error) {
@@ -72,6 +73,37 @@ export async function sendOtpSms(phone: string): Promise<SendOtpResult> {
       success: false,
       message: 'Failed to send verification code',
     };
+  }
+}
+
+// Internal functions that do the actual sending
+async function sendOtpEmailInternal(email: string, code: string): Promise<boolean> {
+  if (!process.env.SMTP_HOST || !process.env.SMTP_USER) {
+    console.log(`[Auth] SMTP not configured, OTP for ${email}: ${code}`);
+    return false;
+  }
+  
+  try {
+    const { sendOtpEmail: sendEmail } = await import('./email');
+    return await sendEmail(email, code);
+  } catch (error) {
+    console.error('[Auth] Email send error:', error);
+    return false;
+  }
+}
+
+async function sendSmsInternal(phone: string, code: string): Promise<boolean> {
+  if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_AUTH_TOKEN) {
+    console.log(`[Auth] Twilio not configured, OTP for ${phone}: ${code}`);
+    return false;
+  }
+  
+  try {
+    const { sendSms } = await import('./email');
+    return await sendSms(phone, code);
+  } catch (error) {
+    console.error('[Auth] SMS send error:', error);
+    return false;
   }
 }
 
