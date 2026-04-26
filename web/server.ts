@@ -3,10 +3,26 @@ import { createServer } from 'http';
 import { parse } from 'url';
 import { Server as SocketIOServer } from 'socket.io';
 import OpenAI from 'openai';
+import { testConnection, initDatabase } from './lib/db';
 
 const dev = process.env.NODE_ENV !== 'production';
 const hostname = '0.0.0.0';
 const port = parseInt(process.env.PORT || process.env.RAILWAY_TCP_APPLICATION_PORT || process.env.WEB_PORT || '8080', 10);
+
+console.log('[Server] Starting...');
+
+// Test database on startup
+if (process.env.DATABASE_URL) {
+  console.log('[Server] Database URL found, testing connection...');
+  testConnection().then(ok => {
+    if (ok) {
+      console.log('[Server] Database OK, initializing tables...');
+      initDatabase();
+    }
+  });
+} else {
+  console.log('[Server] No DATABASE_URL - running without database');
+}
 
 const app = createNext({ dev, hostname, port });
 const handle = app.getRequestHandler();
