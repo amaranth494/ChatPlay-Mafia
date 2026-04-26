@@ -87,7 +87,7 @@ export default function PrivacyPolicy() {
       <h2>7. Contact</h2>
       <p>
         For privacy concerns, contact us at:<br />
-        <strong>privacy@chatplay-mafia.com</strong> or <strong>castle.and.clark@gmail.com</strong>
+        <strong>castle.and.clark@gmail.com</strong>
       </p>
 
       <div style={{ 
