@@ -9,6 +9,8 @@ import { isoBase64URL, isoUint8Array } from '@simplewebauthn/server/helpers';
 import {
   getOrCreateUserByEmail,
   getOrCreateUserByPhone,
+  getUserByEmail,
+  getUserByPhone,
   getUserById,
   getPasskeyCredentials,
   storePasskeyCredential,
@@ -45,7 +47,16 @@ async function sendSmsOtpCode(phone: string, code: string): Promise<boolean> {
 
 export async function sendOtpEmail(email: string): Promise<SendOtpResult> {
   try {
-    const user = await getOrCreateUserByEmail(email);
+    // First check if user exists
+    const user = await getUserByEmail(email);
+    
+    if (!user) {
+      return {
+        success: false,
+        message: 'Email not found',
+      };
+    }
+    
     const code = generateOtp();
     await storeOtpCode(user.id, code, 'email');
     
@@ -67,7 +78,16 @@ export async function sendOtpEmail(email: string): Promise<SendOtpResult> {
 
 export async function sendOtpSms(phone: string): Promise<SendOtpResult> {
   try {
-    const user = await getOrCreateUserByPhone(phone);
+    // First check if user exists
+    const user = await getUserByPhone(phone);
+    
+    if (!user) {
+      return {
+        success: false,
+        message: 'Phone number not found',
+      };
+    }
+    
     const code = generateOtp();
     await storeOtpCode(user.id, code, 'sms');
     

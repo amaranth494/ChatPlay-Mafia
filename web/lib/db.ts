@@ -58,6 +58,8 @@ export async function initDatabase(): Promise<void> {
         id SERIAL PRIMARY KEY,
         email VARCHAR(255) UNIQUE,
         phone VARCHAR(50) UNIQUE,
+        first_name VARCHAR(100),
+        last_name VARCHAR(100),
         registered BOOLEAN DEFAULT FALSE,
         family_name VARCHAR(100),
         title VARCHAR(50),
@@ -421,6 +423,48 @@ export async function addUserPhone(email: string, phone: string): Promise<void> 
       'UPDATE users SET phone = $2, updated_at = NOW() WHERE email = $1',
       [email, phone]
     );
+  } finally {
+    client.release();
+  }
+}
+
+// Get user by email only (no creation)
+export async function getUserByEmail(email: string): Promise<User | null> {
+  const client = await pool.connect();
+  try {
+    const result = await client.query(
+      'SELECT * FROM users WHERE email = $1',
+      [email]
+    );
+    return result.rows[0] || null;
+  } finally {
+    client.release();
+  }
+}
+
+// Create new user (for registration)
+export async function createUser(email: string, phone: string | null, firstName: string, lastName: string): Promise<number> {
+  const client = await pool.connect();
+  try {
+    const result = await client.query(
+      'INSERT INTO users (email, phone, first_name, last_name) VALUES ($1, $2, $3, $4) RETURNING id',
+      [email, phone, firstName, lastName]
+    );
+    return result.rows[0].id;
+  } finally {
+    client.release();
+  }
+}
+
+// Get user by phone only (no creation)
+export async function getUserByPhone(phone: string): Promise<User | null> {
+  const client = await pool.connect();
+  try {
+    const result = await client.query(
+      'SELECT * FROM users WHERE phone = $1',
+      [phone]
+    );
+    return result.rows[0] || null;
   } finally {
     client.release();
   }

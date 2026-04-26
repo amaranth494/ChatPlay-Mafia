@@ -218,3 +218,21 @@
   background: #3a3a3a;
   border-color: #a8c8a8;
 }
+
+.registerPrompt {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: #1a1a1a;
+  border: 1px solid #333;
+}
+
+.registerPromptText {
+  color: #888;
+  font-size: 0.875rem;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.registerPrompt .registerButton {
+  width: 100%;
+}

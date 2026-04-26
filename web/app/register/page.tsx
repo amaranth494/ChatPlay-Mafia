@@ -1,151 +1,219 @@
 'use client';
 
 import { useState } from 'react';
-import { useRouter } from 'next/navigation';
-import { useAuth } from '@/lib/auth-context';
 import styles from '../login/login.module.css';
 
 interface RegisterData {
-  familyName: string;
-  title: string;
-  gender: string;
-  sexualPreference: string;
+  email: string;
+  phone: string;
+  firstName: string;
+  lastName: string;
 }
 
 export default function RegisterPage() {
-  const router = useRouter();
-  const { user, isAuthenticated } = useAuth();
-  const [step, setStep] = useState<'form' | 'otp'>('form');
-  const [code, setCode] = useState('');
+  const [mode, setMode] = useState<'form' | 'otp'>('form');
   const [data, setData] = useState<RegisterData>({
-    familyName: '',
-    title: '',
-    gender: '',
-    sexualPreference: ''
+    email: '',
+    phone: '',
+    firstName: '',
+    lastName: ''
   });
+  const [otpCode, setOtpCode] = useState('');
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  const [userId, setUserId] = useState<number | null>(null);
 
-  const userEmail = user?.email;
+  const handleSubmitRegistration = async () => {
+    if (!data.email || !data.firstName || !data.lastName) {
+      setMessage('Email, first name, and last name are required');
+      return;
+    }
 
-  if (!userEmail) {
+    setLoading(true);
+    setMessage('');
+
+    try {
+      // Create user record
+      const response = await fetch('/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          action: 'create_user', 
+          email: data.email,
+          phone: data.phone || null,
+          firstName: data.firstName,
+          lastName: data.lastName
+        }),
+      });
+      const result = await response.json();
+
+      setLoading(false);
+
+      if (result.success) {
+        setUserId(result.userId);
+        setMode('otp');
+        setMessage(`Verification code sent to ${data.email}`);
+        sessionStorage.setItem('pending_email', data.email);
+        sessionStorage.setItem('pending_user_id', result.userId.toString());
+      } else {
+        setMessage(result.message);
+      }
+    } catch (error) {
+      setLoading(false);
+      setMessage('Registration failed');
+    }
+  };
+
+  const handleVerifyOtp = async () => {
+    if (!userId || !otpCode) return;
+
+    setLoading(true);
+    setMessage('');
+
+    try {
+      const response = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'verify_otp', userId, code: otpCode }),
+      });
+      const result = await response.json();
+
+      setLoading(false);
+
+      if (result.success) {
+        // Store user session
+        const userData = { 
+          id: result.userId, 
+          email: data.email, 
+          phone: data.phone || null 
+        };
+        localStorage.setItem('chatplay_user', JSON.stringify(userData));
+        
+        // Clear session storage
+        sessionStorage.removeItem('pending_user_id');
+        sessionStorage.removeItem('pending_email');
+        
+        // Redirect to profile setup
+        window.location.href = '/profile';
+      } else {
+        setMessage(result.message);
+      }
+    } catch (error) {
+      setLoading(false);
+      setMessage('Verification failed');
+    }
+  };
+
+  if (mode === 'otp') {
     return (
       <div className={styles.container}>
         <div className={styles.loginBox}>
-          <h1>Registration Required</h1>
-          <p className={styles.subtitle}>Please sign in first to register.</p>
-          <a href="/login">
-            <button className={styles.button}>Go to Login</button>
-          </a>
+          <h1>Verify Email</h1>
+          
+          <div className={styles.options}>
+            <p className={styles.subtitle}>Enter the 6-digit code</p>
+            <p className={styles.hint}>Sent to: {data.email}</p>
+            
+            <input
+              type="text"
+              placeholder="000000"
+              value={otpCode}
+              onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+              className={styles.inputOtp}
+              maxLength={6}
+              autoFocus
+            />
+            
+            <button 
+              onClick={handleVerifyOtp} 
+              className={styles.button}
+              disabled={otpCode.length !== 6 || loading}
+            >
+              {loading ? 'Verifying...' : 'Verify'}
+            </button>
+            
+            <button 
+              onClick={handleSubmitRegistration} 
+              className={styles.resendButton}
+            >
+              Resend Code
+            </button>
+            
+            <button onClick={() => setMode('form')} className={styles.backButton}>
+              Back
+            </button>
+          </div>
+
+          {message && <p className={styles.message}>{message}</p>}
+          
+          <div className={styles.footer}>
+            <a href="/privacy-policy" className={styles.footerLink}>Privacy Policy</a>
+            <span className={styles.footerDivider}>|</span>
+            <a href="/terms" className={styles.footerLink}>Terms of Service</a>
+          </div>
         </div>
       </div>
     );
   }
 
-  const handleRegister = async () => {
-    if (!data.familyName || !data.title || !data.gender || !data.sexualPreference) {
-      setMessage('Please fill in all fields');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      // Submit registration data
-      const response = await fetch('/api/auth', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          action: 'complete_registration',
-          email: userEmail,
-          ...data
-        })
-      });
-      const result = await response.json();
-      
-      if (result.success) {
-        router.push('/');
-      } else {
-        setMessage(result.message || 'Registration failed');
-      }
-    } catch (error) {
-      setMessage('Registration failed');
-    }
-    setLoading(false);
-  };
-
-  const titles = ['Boss', 'Underboss', 'Capo', 'Soldier', 'Associate'];
-  const genders = ['Male', 'Female', 'Other', 'Prefer not to say'];
-  const sexualPreferences = ['Straight', 'Gay', 'Bisexual', 'Flexible', 'Prefer not to say'];
-
   return (
     <div className={styles.container}>
       <div className={styles.loginBox}>
-        <h1>Complete Registration</h1>
+        <h1>Register</h1>
         
-        <p className={styles.subtitle}>Welcome, {userEmail}</p>
-        <p className={styles.hint}>Tell us about yourself to personalize your experience.</p>
-
         <div className={styles.options}>
-          <label style={{ display: 'block', marginTop: '1rem' }}>Family Name</label>
+          <p className={styles.subtitle}>Create your account</p>
+          
+          <input
+            type="email"
+            placeholder="Email (required)"
+            value={data.email}
+            onChange={(e) => setData({ ...data, email: e.target.value })}
+            className={styles.input}
+          />
+          
+          <input
+            type="tel"
+            placeholder="Phone (optional)"
+            value={data.phone}
+            onChange={(e) => setData({ ...data, phone: e.target.value })}
+            className={styles.input}
+          />
+          
           <input
             type="text"
-            placeholder="Your family name"
-            value={data.familyName}
-            onChange={(e) => setData({ ...data, familyName: e.target.value })}
+            placeholder="First Name (required)"
+            value={data.firstName}
+            onChange={(e) => setData({ ...data, firstName: e.target.value })}
+            className={styles.input}
+          />
+          
+          <input
+            type="text"
+            placeholder="Last Name (required)"
+            value={data.lastName}
+            onChange={(e) => setData({ ...data, lastName: e.target.value })}
             className={styles.input}
           />
 
-          <label style={{ display: 'block', marginTop: '1rem' }}>Your Title</label>
-          <select
-            value={data.title}
-            onChange={(e) => setData({ ...data, title: e.target.value })}
-            className={styles.input}
-          >
-            <option value="">Select title</option>
-            {titles.map(t => <option key={t} value={t}>{t}</option>)}
-          </select>
-
-          <label style={{ display: 'block', marginTop: '1rem' }}>Gender</label>
-          <select
-            value={data.gender}
-            onChange={(e) => setData({ ...data, gender: e.target.value })}
-            className={styles.input}
-          >
-            <option value="">Select gender</option>
-            {genders.map(g => <option key={g} value={g}>{g}</option>)}
-          </select>
-
-          <label style={{ display: 'block', marginTop: '1rem' }}>Sexual Preference</label>
-          <select
-            value={data.sexualPreference}
-            onChange={(e) => setData({ ...data, sexualPreference: e.target.value })}
-            className={styles.input}
-          >
-            <option value="">Select preference</option>
-            {sexualPreferences.map(s => <option key={s} value={s}>{s}</option>)}
-          </select>
-
           <button 
-            onClick={handleRegister} 
+            onClick={handleSubmitRegistration} 
             className={styles.button}
-            disabled={loading || !data.familyName || !data.title || !data.gender || !data.sexualPreference}
-            style={{ marginTop: '2rem' }}
+            disabled={loading}
+            style={{ marginTop: '1rem' }}
           >
-            {loading ? 'Registering...' : 'Complete Registration'}
+            {loading ? 'Creating Account...' : 'Create Account'}
           </button>
-
-          <a href="/">
-            <button 
-              className={styles.backButton}
-              style={{ display: 'block', marginTop: '1rem' }}
-            >
-              Skip for Now
+          
+          <a href="/login">
+            <button className={styles.backButton}>
+              Back to Login
             </button>
           </a>
         </div>
 
         {message && <p className={styles.message}>{message}</p>}
-
+        
         <div className={styles.footer}>
           <a href="/privacy-policy" className={styles.footerLink}>Privacy Policy</a>
           <span className={styles.footerDivider}>|</span>

@@ -1,16 +1,33 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { isUserRegistered, getUserProfile, completeRegistration, addUserPhone } from '@/lib/db';
+import { getUserByEmail, createUser, getUserProfile, completeRegistration, addUserPhone, isUserRegistered } from '@/lib/db';
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
     const { action, email } = body;
 
-    if (!email) {
+    if (!email && action !== 'create_user') {
       return NextResponse.json({ success: false, message: 'Email required' }, { status: 400 });
     }
 
     switch (action) {
+      case 'create_user': {
+        const { email, phone, firstName, lastName } = body;
+        if (!email || !firstName || !lastName) {
+          return NextResponse.json({ success: false, message: 'Email, first name, and last name are required' }, { status: 400 });
+        }
+        
+        // Check if email already exists
+        const existing = await getUserByEmail(email);
+        if (existing) {
+          return NextResponse.json({ success: false, message: 'Email already registered' }, { status: 400 });
+        }
+        
+        // Create user - OTP will be sent separately via /api/auth
+        const userId = await createUser(email, phone, firstName, lastName);
+        return NextResponse.json({ success: true, userId, message: 'User created' });
+      }
+
       case 'check_registration': {
         const isRegistered = await isUserRegistered(email);
         return NextResponse.json({ 

@@ -1,91 +1,82 @@
 'use client';
 
 import { useState } from 'react';
-import { useAuth } from '@/lib/auth-context';
 import styles from './login.module.css';
 
 export default function LoginPage() {
-  const [mode, setMode] = useState<'select' | 'email' | 'sms' | 'otp' | 'passkey'>('select');
+  const [mode, setMode] = useState<'select' | 'email' | 'sms'>('select');
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
-  const [otpCode, setOtpCode] = useState('');
-  const [userId, setUserId] = useState<number | null>(null);
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
-  
-  const { loginWithEmail, loginWithSms, verifyOtp, loginWithPasskey, registerPasskey } = useAuth();
+  const [showRegister, setShowRegister] = useState(false);
 
-  const handleSendOtp = async () => {
-    setLoading(true);
-    setMessage('');
-    
-    let result;
-    if (mode === 'email') {
-      result = await loginWithEmail(email);
-      if (result.userId) setUserId(result.userId);
-    } else {
-      result = await loginWithSms(phone);
-      if (result.userId) setUserId(result.userId);
-    }
-    
-    setLoading(false);
-    
-    if (result.success) {
-      setMessage(result.message);
-      setMode('otp');
-    } else {
-      setMessage(result.message);
-    }
-  };
-
-  const handleVerifyOtp = async () => {
-    if (!userId || !otpCode) return;
-    
-    setLoading(true);
-    const result = await verifyOtp(userId, otpCode);
-    setLoading(false);
-    
-    if (result.success) {
-      setMessage('Verified! Redirecting...');
-      // AuthProvider will handle the redirect
-      window.location.href = '/';
-    } else {
-      setMessage(result.message);
-    }
-  };
-
-  const handlePasskeyLogin = async () => {
-    if (!email) {
-      setMessage('Please enter your email first');
-      return;
-    }
+  const handleSendEmailOtp = async () => {
+    if (!email) return;
     
     setLoading(true);
     setMessage('');
+    setShowRegister(false);
     
-    const result = await loginWithPasskey(email);
-    setLoading(false);
-    
-    if (result.success) {
-      setMessage('Authenticated! Redirecting...');
-      window.location.href = '/';
-    } else {
-      setMessage(result.message);
+    try {
+      const response = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'send_otp_email', email }),
+      });
+      const result = await response.json();
+      
+      setLoading(false);
+      
+      if (result.success) {
+        setMessage(`Code sent to ${email}`);
+        // Store userId and email for verification
+        sessionStorage.setItem('pending_email', email);
+        if (result.userId) {
+          sessionStorage.setItem('pending_user_id', result.userId.toString());
+        }
+        window.location.href = '/verify';
+      } else {
+        setMessage('Email not found. Please register below.');
+        setShowRegister(true);
+      }
+    } catch (error) {
+      setLoading(false);
+      setMessage('Failed to send verification code');
     }
   };
 
-  const handleRegisterPasskey = async () => {
-    if (!userId) return;
+  const handleSendSmsOtp = async () => {
+    if (!phone) return;
     
     setLoading(true);
-    const result = await registerPasskey(userId);
-    setLoading(false);
+    setMessage('');
+    setShowRegister(false);
     
-    if (result.success) {
-      setMessage('Passkey registered! You can now use it to login.');
-      window.location.href = '/';
-    } else {
-      setMessage(result.message);
+    try {
+      const response = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'send_otp_sms', phone }),
+      });
+      const result = await response.json();
+      
+      setLoading(false);
+      
+      if (result.success) {
+        setMessage(`Code sent to ${phone}`);
+        sessionStorage.setItem('pending_phone', phone);
+        if (result.userId) {
+          sessionStorage.setItem('pending_user_id', result.userId.toString());
+        }
+        window.location.href = '/verify';
+      } else {
+        setMessage('Phone number not found. Please register below.');
+        setShowRegister(true);
+      }
+    } catch (error) {
+      setLoading(false);
+      setMessage('Failed to send verification code');
     }
   };
 
@@ -105,36 +96,6 @@ export default function LoginPage() {
             <button onClick={() => setMode('sms')} className={styles.button}>
               Continue with SMS
             </button>
-            
-            <div className={styles.divider}>
-              <span>or</span>
-            </div>
-            
-            <input
-              type="email"
-              placeholder="Enter your email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              className={styles.input}
-            />
-            
-            <button 
-              onClick={handlePasskeyLogin} 
-              className={styles.buttonSecondary}
-              disabled={!email}
-            >
-              Login with Passkey
-            </button>
-            
-            <div className={styles.divider}>
-              <span>new user?</span>
-            </div>
-            
-            <a href="/register">
-              <button className={styles.registerButton}>
-                Register
-              </button>
-            </a>
           </div>
         )}
 
@@ -146,13 +107,13 @@ export default function LoginPage() {
               type="email"
               placeholder="your@email.com"
               value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              onChange={(e) => { setEmail(e.target.value); setMessage(''); setShowRegister(false); }}
               className={styles.input}
               autoFocus
             />
             
             <button 
-              onClick={handleSendOtp} 
+              onClick={handleSendEmailOtp} 
               className={styles.button}
               disabled={!email || loading}
             >
@@ -173,7 +134,7 @@ export default function LoginPage() {
               type="tel"
               placeholder="+1234567890"
               value={phone}
-              onChange={(e) => setPhone(e.target.value)}
+              onChange={(e) => { setPhone(e.target.value); setMessage(''); setShowRegister(false); }}
               className={styles.input}
               autoFocus
             />
@@ -183,7 +144,7 @@ export default function LoginPage() {
             </p>
             
             <button 
-              onClick={handleSendOtp} 
+              onClick={handleSendSmsOtp} 
               className={styles.button}
               disabled={!phone || loading}
             >
@@ -196,44 +157,20 @@ export default function LoginPage() {
           </div>
         )}
 
-        {mode === 'otp' && (
-          <div className={styles.options}>
-            <p className={styles.subtitle}>Enter the 6-digit code</p>
-            <p className={styles.hint}>Check your {email ? 'email' : 'phone'}</p>
-            
-            <input
-              type="text"
-              placeholder="000000"
-              value={otpCode}
-              onChange={(e) => setOtpCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
-              className={styles.inputOtp}
-              maxLength={6}
-              autoFocus
-            />
-            
-            <button 
-              onClick={handleVerifyOtp} 
-              className={styles.button}
-              disabled={otpCode.length !== 6 || loading}
-            >
-              {loading ? 'Verifying...' : 'Verify'}
-            </button>
-            
-            <button 
-              onClick={handleSendOtp} 
-              className={styles.resendButton}
-              disabled={loading}
-            >
-              Resend Code
-            </button>
-            
-            <button onClick={() => setMode('select')} className={styles.backButton}>
-              Back
-            </button>
+        {message && <p className={styles.message}>{message}</p>}
+        
+        {showRegister && (
+          <div className={styles.registerPrompt}>
+            <p className={styles.registerPromptText}>
+              The {mode === 'sms' ? 'phone number' : 'email'} you entered isn&apos;t valid. Please enter a different {mode === 'sms' ? 'number' : 'email'}, return to the main login page or click Register below if you&apos;re a New User.
+            </p>
+            <a href="/register">
+              <button className={styles.registerButton}>
+                Register
+              </button>
+            </a>
           </div>
         )}
-
-        {message && <p className={styles.message}>{message}</p>}
         
         <div className={styles.footer}>
           <a href="/privacy-policy" className={styles.footerLink}>Privacy Policy</a>
