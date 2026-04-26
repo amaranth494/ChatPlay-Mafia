@@ -82,11 +82,17 @@ class ChatPlayClient {
         console.log('[Socket] Disconnected from server');
       });
 
+      this.socket.on('disconnect_error', (error) => {
+        console.log('[Socket] Disconnect error:', error);
+      });
+
       this.socket.on('message', (event: ServerEvent) => {
         console.log('[Socket] Received event:', event.type, event.data);
         const handlers = this.handlers.get(event.type);
         if (handlers) {
           handlers.forEach(handler => handler(event.data));
+        } else {
+          console.log('[Socket] No handler for event type:', event.type);
         }
       });
     });

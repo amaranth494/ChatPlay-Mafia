@@ -85,10 +85,10 @@ io.on('connection', (socket) => {
   console.log('[Server] Client connected:', socket.id);
 
   socket.on('message', async (event: { type: string; data?: unknown }) => {
-    console.log('[Server] Received event:', event.type, JSON.stringify(event.data));
+    console.log('[Server] RAW event received:', JSON.stringify(event));
     
     if (event.type === 'select_npc') {
-      console.log('[Server] Processing select_npc event');
+      console.log('[Server] Processing select_npc NOW');
     }
     
     switch (event.type) {
