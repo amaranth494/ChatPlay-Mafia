@@ -1,0 +1,50 @@
+﻿[Server] Database URL found, testing connection...
+[Server] Initializing NPC states
+ΓÜá Warning: Next.js inferred your workspace root, but it may not be correct.
+ We detected multiple lockfiles and selected the directory of /app/package-lock.json as the root directory.
+ To silence this warning, set `turbopack.root` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/turbopack#root-directory for more information.
+ Detected additional lockfiles: 
+   * /app/web/package-lock.json
+
+[DB] Tables created successfully
+> Ready on http://0.0.0.0:8080
+[DB] Connected to database!
+[DB] Query result: { now: 2026-04-26T19:38:26.372Z }
+[Server] Database OK, initializing tables...
+[DB] Initializing database tables...
+[DB] Configuring database connection...
+[DB] Connected to database!
+[Email] Creating transporter: smtp.gmail.com:465, secure=true
+[Email] User: castle.and.clark@gmail.com
+[Email] Verifying SMTP connection...
+[Email] SMTP connection verified successfully
+[Email] Message sent: <d1d0b7b1-91f3-4586-ca18-30cfabdfcfb1@chatplay-mafia.com>
+[Email] Response: 250 2.0.0 OK  1777232686 a92af1059eb24-12dbaab165bsm25845496c88.6 - gsmtp
+}
+[DB] Connected to database!
+[Registration API] Error: error: column "registered" does not exist
+    at async p (lib/db.ts:366:20)
+  internalQuery: undefined,
+    at async i (app/api/register/route.ts:32:30) {
+  length: 109,
+  where: undefined,
+  schema: undefined,
+  table: undefined,
+  severity: 'ERROR',
+  column: undefined,
+  code: '42703',
+  dataType: undefined,
+  detail: undefined,
+  constraint: undefined,
+  hint: undefined,
+  file: 'parse_relation.c',
+  position: '8',
+  line: '3822',
+  internalPosition: undefined,
+  routine: 'errorMissingColumn'
+[Server] Γÿà Client connected: ME8nA9ws07MhThiHAAAB
+[Server] Γÿà Received: join_game
+[Server] join_game START
+[Server] Sent thread_update
+[Server] Sent game_state

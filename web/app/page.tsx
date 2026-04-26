@@ -151,7 +151,7 @@ export default function Home() {
     );
   }
 
-  if (!connected) {
+if (!connected) {
     return (
       <div className={styles.container}>
         <div className={styles.login}>
@@ -161,32 +161,6 @@ export default function Home() {
             Enter the Family
           </button>
         </div>
-        {user && (
-          <div className={styles.userMenu}>
-            <button 
-              className={styles.userMenuButton}
-              onClick={() => setShowUserMenu(!showUserMenu)}
-            >
-              <span className={styles.userIcon}>👤</span>
-<span className={styles.userEmail}>{user?.email}</span>
-              <span className={styles.menuArrow}>{showUserMenu ? '▲' : '▼'}</span>
-            </button>
-            {showUserMenu && (
-              <div className={styles.dropdownMenu}>
-                <a href="/profile" className={styles.menuItem}>View Profile</a>
-                <button 
-                  className={styles.menuItem} 
-                  onClick={() => {
-                    logout();
-                    window.location.href = '/login';
-                  }}
-                >
-                  Logout
-                </button>
-              </div>
-            )}
-          </div>
-        )}
       </div>
     );
   }
@@ -281,31 +255,31 @@ export default function Home() {
           </div>
         )}
       </div>
-    </div>
-    );
 
-    return (
-    <div className={styles.userMenu}>
-      <button 
-        className={styles.userMenuButton}
-        onClick={() => setShowUserMenu(!showUserMenu)}
-      >
-        <span className={styles.userIcon}>👤</span>
-        <span className={styles.userEmail}>{user?.email}</span>
-        <span className={styles.menuArrow}>{showUserMenu ? '▲' : '▼'}</span>
-      </button>
-      {showUserMenu && (
-        <div className={styles.dropdownMenu}>
-          <a href="/profile" className={styles.menuItem}>View Profile</a>
+      {user && (
+        <div className={styles.userMenu}>
           <button 
-            className={styles.menuItem} 
-            onClick={() => {
-              logout();
-              window.location.href = '/login';
-            }}
+            className={styles.userMenuButton}
+            onClick={() => setShowUserMenu(!showUserMenu)}
           >
-            Logout
+            <span className={styles.userIcon}>👤</span>
+            <span className={styles.userEmail}>{user?.email}</span>
+            <span className={styles.menuArrow}>{showUserMenu ? '▲' : '▼'}</span>
           </button>
+          {showUserMenu && (
+            <div className={styles.dropdownMenu}>
+              <a href="/profile" className={styles.menuItem}>View Profile</a>
+              <button 
+                className={styles.menuItem} 
+                onClick={() => {
+                  logout();
+                  window.location.href = '/login';
+                }}
+              >
+                Logout
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>
