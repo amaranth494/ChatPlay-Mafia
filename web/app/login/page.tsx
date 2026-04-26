@@ -220,6 +220,12 @@ export default function LoginPage() {
         )}
 
         {message && <p className={styles.message}>{message}</p>}
+        
+        <div className={styles.footer}>
+          <a href="/privacy-policy" className={styles.footerLink}>Privacy Policy</a>
+          <span className={styles.footerDivider}>|</span>
+          <a href="/terms" className={styles.footerLink}>Terms of Service</a>
+        </div>
       </div>
     </div>
   );

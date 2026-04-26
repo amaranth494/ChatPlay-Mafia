@@ -169,3 +169,26 @@
   background: #1a1a1a;
   border: 1px solid #333;
 }
+
+.footer {
+  margin-top: 2rem;
+  padding-top: 1rem;
+  border-top: 1px solid #252525;
+  text-align: center;
+  font-size: 0.75rem;
+}
+
+.footerLink {
+  color: #666;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+.footerLink:hover {
+  color: #999;
+}
+
+.footerDivider {
+  color: #444;
+  margin: 0 0.5rem;
+}
