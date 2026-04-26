@@ -1,14 +1,22 @@
 import nodemailer from 'nodemailer';
 
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: parseInt(process.env.SMTP_PORT || '587'),
-  secure: process.env.SMTP_SECURE === 'true',
-  auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
-  },
-});
+const getTransporter = () => {
+  const port = parseInt(process.env.SMTP_PORT || '587');
+  const isSecure = port === 465 || process.env.SMTP_SECURE === 'true';
+  
+  return nodemailer.createTransport({
+    host: process.env.SMTP_HOST,
+    port: port,
+    secure: isSecure,
+    requireTLS: !isSecure,
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASS,
+    },
+    connectionTimeout: 10000,
+    socketTimeout: 10000,
+  });
+};
 
 export async function sendOtpEmail(to: string, code: string): Promise<boolean> {
   if (!process.env.SMTP_HOST || !process.env.SMTP_USER) {
@@ -17,7 +25,13 @@ export async function sendOtpEmail(to: string, code: string): Promise<boolean> {
   }
 
   try {
-    await transporter.sendMail({
+    const transporter = getTransporter();
+    
+    // Verify connection first
+    await transporter.verify();
+    console.log(`[Email] SMTP connection verified`);
+    
+    const result = await transporter.sendMail({
       from: process.env.SMTP_FROM || 'noreply@chatplay-mafia.com',
       to,
       subject: 'Your ChatPlay Mafia Verification Code',
@@ -34,7 +48,7 @@ export async function sendOtpEmail(to: string, code: string): Promise<boolean> {
       `,
     });
     
-    console.log(`[Email] Sent OTP to ${to}`);
+    console.log(`[Email] Sent OTP to ${to}:`, result.messageId);
     return true;
   } catch (error) {
     console.error('[Email] Failed to send email:', error);
