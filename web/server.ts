@@ -146,21 +146,20 @@ io.on('connection', (socket) => {
         break;
       }
 
-      case 'select_npc': {
-        console.log('[Server] Processing select_npc case');
-        const client = clients.get(socket.id);
-        if (client && event.data && typeof event.data === 'object' && 'npcId' in event.data) {
-          client.selectedNpc = (event.data as { npcId: string }).npcId;
-          console.log('[Server] Client selected NPC:', client.selectedNpc);
-          
-          const npc = npcs[client.selectedNpc];
-          if (npc) {
-            console.log('[Server] Found NPC, messages:', npc.messages.length);
-            console.log('[Server] Sending thread history:', npc.messages.length, 'messages');
-            // Send full thread history
-            socket.emit('message', {
-              type: 'thread_history',
-              data: {
+case 'select_npc': {
+        try {
+          console.log('[Server] Processing select_npc NOW');
+          const client = clients.get(socket.id);
+          if (client && event.data && typeof event.data === 'object' && 'npcId' in event.data) {
+            client.selectedNpc = (event.data as { npcId: string }).npcId;
+            console.log('[Server] Client selected NPC:', client.selectedNpc);
+            
+            const npc = npcs[client.selectedNpc];
+            if (npc) {
+              console.log('[Server] Found NPC, messages:', npc.messages.length);
+              console.log('[Server] Sending thread history...');
+              // Send full thread history
+              const historyData = {
                 npcId: npc.id,
                 messages: npc.messages.map(m => ({
                   id: m.id,
@@ -168,7 +167,24 @@ io.on('connection', (socket) => {
                   content: m.content,
                   timestamp: m.timestamp
                 }))
-              }
+              };
+              console.log('[Server] History data ready, emit start');
+              socket.emit('message', {
+                type: 'thread_history',
+                data: historyData
+              });
+              console.log('[Server] Emitted thread_history');
+            } else {
+              console.log('[Server] NPC not found:', client.selectedNpc);
+            }
+          } else {
+            console.log('[Server] Invalid select_npc event data');
+          }
+        } catch (err) {
+          console.error('[Server] select_npc error:', err);
+        }
+        break;
+      }
             });
           } else {
             console.log('[Server] NPC not found:', client.selectedNpc);
