@@ -20,16 +20,23 @@ export default function Home() {
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const activeThreadRef = useRef<Thread | null>(null);
+
+  // Keep ref in sync with state
+  useEffect(() => {
+    activeThreadRef.current = activeThread;
+  }, [activeThread]);
 
   useEffect(() => {
     // Handle incoming NPC message (single response)
     client.on('npc_message', (data: NpcMessage) => {
       console.log('[Client] Received npc_message:', data);
-      if (activeThread && data.npcId === activeThread.npcId) {
+      const currentThread = activeThreadRef.current;
+      if (currentThread && data.npcId === currentThread.npcId) {
         setMessages(prev => [...prev, {
           id: crypto.randomUUID(),
           senderType: 'npc',
-          senderName: activeThread.npcName,
+          senderName: currentThread.npcName,
           content: data.content,
           timestamp: data.timestamp
         }]);
@@ -44,11 +51,12 @@ export default function Home() {
     // Handle thread history (full conversation when switching threads)
     client.on('thread_history', (data: ThreadHistory) => {
       console.log('[Client] Received thread_history:', data);
-      if (activeThread && data.npcId === activeThread.npcId) {
+      const currentThread = activeThreadRef.current;
+      if (currentThread && data.npcId === currentThread.npcId) {
         const historyMessages: Message[] = data.messages.map(m => ({
           id: m.id,
           senderType: m.sender as 'player' | 'npc',
-          senderName: m.sender === 'player' ? 'You' : activeThread.npcName,
+          senderName: m.sender === 'player' ? 'You' : currentThread.npcName,
           content: m.content,
           timestamp: m.timestamp
         }));
@@ -68,10 +76,11 @@ export default function Home() {
       console.error('Server error:', data.message);
     });
 
+    // Cleanup: disconnect socket when component unmounts
     return () => {
       client.disconnect();
     };
-  }, [activeThread]);
+  }, []);
 
   const handleConnect = async () => {
     try {
