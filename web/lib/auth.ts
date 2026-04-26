@@ -1,5 +1,26 @@
 // @ts-nocheck
-// Internal function to actually send the email
+import {
+  generateAuthenticationOptions,
+  verifyAuthenticationResponse,
+  generateRegistrationOptions,
+  verifyRegistrationResponse,
+} from '@simplewebauthn/server';
+import { isoBase64URL, isoUint8Array } from '@simplewebauthn/server/helpers';
+import {
+  getOrCreateUserByEmail,
+  getOrCreateUserByPhone,
+  getUserById,
+  getPasskeyCredentials,
+  storePasskeyCredential,
+  updatePasskeyCounter,
+  storeOtpCode,
+  verifyOtpCode,
+} from './db';
+import { sendOtpEmail as sendEmailOtp, sendSms as sendSmsOtp } from './email';
+
+const RP_NAME = 'ChatPlay Mafia';
+const RP_ID = 'chatplay-mafia-production.up.railway.app';
+const ORIGIN = 'https://chatplay-mafia-production.up.railway.app';
 async function sendEmailOtpCode(email: string, code: string): Promise<boolean> {
   if (!process.env.SMTP_HOST || !process.env.SMTP_USER) {
     console.log(`[Auth] SMTP not configured, OTP for ${email}: ${code}`);
