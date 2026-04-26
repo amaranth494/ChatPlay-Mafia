@@ -63,9 +63,11 @@ class ChatPlayClient {
     console.log('[Socket] Connecting to:', url);
     return new Promise((resolve, reject) => {
       this.socket = io(url, {
-        transports: ['polling', 'websocket'],
+        transports: ['websocket', 'polling'],
         autoConnect: true,
-        path: '/socket.io'
+        path: '/socket.io',
+        reconnection: true,
+        reconnectionAttempts: 3
       });
 
       this.socket.on('connect', () => {
