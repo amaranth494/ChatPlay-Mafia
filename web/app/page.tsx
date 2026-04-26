@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { client, Thread, NpcMessage, ThreadHistory } from '@/lib/socket';
 import styles from './page.module.css';
@@ -85,7 +85,7 @@ export default function Home() {
     };
   }, []);
 
-  const handleConnect = async () => {
+  const handleConnect = useCallback(async () => {
     try {
       await client.connect();
       setConnected(true);
@@ -93,7 +93,7 @@ export default function Home() {
     } catch (error) {
       console.error('Failed to connect:', error);
     }
-  };
+  }, [user?.id]);
 
   const handleSend = async () => {
     if (!input.trim() || sending || !activeThread) return;
@@ -165,7 +165,7 @@ export default function Home() {
         </div>
         <button 
           className={styles.familyInfoButton}
-          onClick={() => window.location.href = '/profile'}
+          onClick={() => window.location.href = '/familyinfo'}
         >
           👥 Family Info
         </button>
