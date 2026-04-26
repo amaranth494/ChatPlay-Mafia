@@ -113,6 +113,23 @@ io.on('connection', (socket) => {
 
       case 'mark_read':
         break;
+
+      case 'select_npc': {
+        const clientForNpc = clients.get(socket.id);
+        if (clientForNpc && event.data && typeof event.data === 'object' && 'npcId' in event.data) {
+          const npcId = (event.data as { npcId: string }).npcId;
+          
+          // Send back empty thread history for the selected NPC
+          socket.emit('message', {
+            type: 'thread_history',
+            data: {
+              npcId,
+              messages: []
+            }
+          });
+        }
+        break;
+      }
     }
   });
 
