@@ -109,6 +109,7 @@ io.on('connection', (socket) => {
     
     switch (event.type) {
       case 'join_game': {
+        console.log('[Server] join_game START');
         const playerId = `player_${socket.id.slice(0, 8)}`;
         const familyId = `family_${socket.id.slice(0, 8)}`;
         
@@ -129,6 +130,7 @@ io.on('connection', (socket) => {
           type: 'thread_update',
           data: threads
         });
+        console.log('[Server] Sent thread_update');
 
         socket.emit('message', {
           type: 'game_state',
@@ -139,6 +141,7 @@ io.on('connection', (socket) => {
             territories: ['Downtown']
           }
         });
+        console.log('[Server] Sent game_state');
 
         // Send welcome message from Consigliere
         const npc = npcs['npc_consiglieri'];
