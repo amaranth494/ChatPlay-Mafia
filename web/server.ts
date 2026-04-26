@@ -3,7 +3,7 @@ import { createServer } from 'http';
 import { parse } from 'url';
 import { Server as SocketIOServer } from 'socket.io';
 import OpenAI from 'openai';
-import { testConnection, initDatabase } from './lib/db';
+import { testConnection, initDatabase, getOrCreateThread, saveMessage, getMessageHistory } from './lib/db';
 
 const dev = process.env.NODE_ENV !== 'production';
 const hostname = '0.0.0.0';
@@ -189,15 +189,30 @@ case 'select_npc': {
             break;
           }
           
-          // Simply send a basic message back to test
-          socket.emit('message', {
-            type: 'thread_history',
-            data: {
-              npcId: npc.id,
-              messages: []
-            }
-          });
-          console.log('[Server] Sent empty history');
+          // Fetch history from database
+          try {
+            const threadId = await getOrCreateThread(data.npcId, client.playerId);
+            const messages = await getMessageHistory(threadId);
+            
+            socket.emit('message', {
+              type: 'thread_history',
+              data: {
+                npcId: npc.id,
+                messages
+              }
+            });
+            console.log('[Server] Sent history with', messages.length, 'messages');
+          } catch (dbError) {
+            console.error('[Server] DB error:', dbError);
+            // Fallback to empty history
+            socket.emit('message', {
+              type: 'thread_history',
+              data: {
+                npcId: npc.id,
+                messages: []
+              }
+            });
+          }
           
         } catch (e: unknown) {
           console.log('[Server] Error:', e);
@@ -216,6 +231,8 @@ case 'select_npc': {
           
           if (npc && process.env.OPENAI_API_KEY) {
             try {
+              const threadId = await getOrCreateThread(npcId, client.playerId);
+              
               const completion = await openai.chat.completions.create({
                 model: 'gpt-4o-mini',
                 messages: [
@@ -226,54 +243,40 @@ case 'select_npc': {
               });
               
               const response = completion.choices[0]?.message?.content || "I understand, Boss.";
+              const timestamp = new Date().toISOString();
               
-              // Add to history
-              npc.messages.push({
-                id: `msg_${Date.now()}_player`,
-                sender: 'player',
-                content,
-                timestamp: new Date().toISOString()
-              });
-              npc.messages.push({
-                id: `msg_${Date.now()}_npc`,
-                sender: 'npc',
-                content: response,
-                timestamp: new Date().toISOString()
-              });
-              npc.messageCount++;
+              // Save messages to database
+              await saveMessage(threadId, 'player', content);
+              await saveMessage(threadId, 'npc', response);
               
               socket.emit('message', {
                 type: 'npc_message',
                 data: {
                   npcId: npc.id,
                   content: response,
-                  timestamp: new Date().toISOString()
+                  timestamp
                 }
               });
             } catch (err) {
               console.error('OpenAI error:', err);
               const fallback = `I hear you, Boss. "${content.substring(0, 30)}..." - we'll discuss this further.`;
+              const timestamp = new Date().toISOString();
               
-              npc.messages.push({
-                id: `msg_${Date.now()}_player`,
-                sender: 'player',
-                content,
-                timestamp: new Date().toISOString()
-              });
-              npc.messages.push({
-                id: `msg_${Date.now()}_npc`,
-                sender: 'npc',
-                content: fallback,
-                timestamp: new Date().toISOString()
-              });
-              npc.messageCount++;
+              // Still save to database on error
+              try {
+                const threadId = await getOrCreateThread(npcId, client.playerId);
+                await saveMessage(threadId, 'player', content);
+                await saveMessage(threadId, 'npc', fallback);
+              } catch (dbErr) {
+                console.error('[Server] DB save error:', dbErr);
+              }
               
               socket.emit('message', {
                 type: 'npc_message',
                 data: {
                   npcId: npc.id,
                   content: fallback,
-                  timestamp: new Date().toISOString()
+                  timestamp
                 }
               });
             }
