@@ -140,10 +140,6 @@ export default function Home() {
               onClick={() => {
                 setActiveThread(thread);
                 client.selectNpc(thread.npcId);
-                // Delay markRead to avoid socket issues
-                setTimeout(() => {
-                  client.markRead(thread.id);
-                }, 100);
               }}
             >
               <div className={styles.threadName}>{thread.npcName}</div>
