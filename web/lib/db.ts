@@ -138,7 +138,6 @@ export async function initDatabase(): Promise<void> {
     client.release();
   }
 }
-}
 
 // Get or create thread for NPC and player
 export async function getOrCreateThread(npcId: string, playerId: string): Promise<number> {
