@@ -185,14 +185,6 @@ case 'select_npc': {
         }
         break;
       }
-          } else {
-            console.log('[Server] Invalid select_npc event data');
-          }
-        } catch (err) {
-          console.error('[Server] select_npc error:', err);
-        }
-        break;
-      }
 
       case 'send_message': {
         const client = clients.get(socket.id);
