@@ -1,0 +1,50 @@
+﻿[Server] Γÿà Client connected: dR_R2qlYQFSvQuqKAAAF
+[Server] Γÿà Received: join_game
+[Server] join_game START
+[Server] Sent thread_update
+[Server] Sent game_state
+Client disconnected: dR_R2qlYQFSvQuqKAAAF
+[DB] Connected to database!
+[Email] Creating transporter: smtp.gmail.com:465, secure=true
+[Email] User: castle.and.clark@gmail.com
+[Email] Verifying SMTP connection...
+[Email] SMTP connection verified successfully
+[Email] Message sent: <19d3d04d-eff2-a116-29dc-d39e4b11a6fe@chatplay-mafia.com>
+[Email] Response: 250 2.0.0 OK  1777320248 5a478bee46e88-2ed0a103542sm439606eec.21 - gsmtp
+[DB] Connected to database!
+[DB] getUserNpcs: userId=10
+[DB] Found 2 NPCs: [
+  'a489bee1-6687-48ee-ae57-d52c5318bc6c',
+  '87c8c351-fc2e-439b-9c12-d7f08a1a7765'
+]
+[Server] Γÿà Client connected: 3GVHczVwxt4blJ_DAAAH
+[Server] Γÿà Received: join_game
+[Server] join_game START
+[Server] Sent thread_update
+[Server] Sent game_state
+[API] get_thread_messages: playerUuid=5a3a220e-bbfd-4a05-b83e-76aae10d3239, npcUuid="a489bee1-6687-48ee-ae57-d52c5318bc6c"
+[DB] Connected to database!
+[DB] getOrCreateThread: npcUuid=a489bee1-6687-48ee-ae57-d52c5318bc6c, playerUuid=5a3a220e-bbfd-4a05-b83e-76aae10d3239
+[DB] Found existing thread: uuid=2ce68b17-c505-4c57-8d33-563edf60bd44
+[API] threadUuid=2ce68b17-c505-4c57-8d33-563edf60bd44
+[DB] getMessageHistory: threadUuid=2ce68b17-c505-4c57-8d33-563edf60bd44, limit=50
+[DB] Loaded 0 messages
+[API] loaded 0 messages
+[API] get_thread_messages: playerUuid=5a3a220e-bbfd-4a05-b83e-76aae10d3239, npcUuid="87c8c351-fc2e-439b-9c12-d7f08a1a7765"
+[DB] getOrCreateThread: npcUuid=87c8c351-fc2e-439b-9c12-d7f08a1a7765, playerUuid=5a3a220e-bbfd-4a05-b83e-76aae10d3239
+[DB] Found existing thread: uuid=0c492d50-3741-4f02-bb46-eab5656199f7
+[API] threadUuid=0c492d50-3741-4f02-bb46-eab5656199f7
+[DB] getMessageHistory: threadUuid=0c492d50-3741-4f02-bb46-eab5656199f7, limit=50
+[DB] Loaded 0 messages
+[API] loaded 0 messages
+Client disconnected: 3GVHczVwxt4blJ_DAAAH
+[DB] getUserNpcs: userId=10
+[DB] Found 2 NPCs: [
+  'a489bee1-6687-48ee-ae57-d52c5318bc6c',
+  '87c8c351-fc2e-439b-9c12-d7f08a1a7765'
+]
+[Server] Γÿà Client connected: 0sowR7jotTIdpCx5AAAJ
+[Server] Γÿà Received: join_game
+[Server] join_game START
+[Server] Sent thread_update
+[Server] Sent game_state

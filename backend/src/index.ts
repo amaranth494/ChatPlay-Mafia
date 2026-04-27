@@ -3,7 +3,7 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import dotenv from 'dotenv';
 
-// Simple socket server - threads come from database, not hardcoded
+// v2.1 - threads from database only
 dotenv.config();
 
 const app = express();
