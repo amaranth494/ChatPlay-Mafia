@@ -15,6 +15,7 @@ Write-Host ""
 Write-Host "Building backend..." -ForegroundColor Yellow
 Set-Location backend
 npm install
+Remove-Item -Recurse -Force dist -ErrorAction SilentlyContinue
 npx tsc
 Set-Location ..
 
