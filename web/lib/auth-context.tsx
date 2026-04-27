@@ -4,6 +4,7 @@ import { createContext, useContext, useState, useEffect, ReactNode } from 'react
 
 export interface User {
   id: number;
+  playerUuid: string;
   email: string | null;
   phone: string | null;
 }
@@ -82,8 +83,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const result = await response.json();
       
       if (result.success) {
-        // Fetch user data
-        const userData: User = { id: userId, email: null, phone: null };
+        // Store user data with playerUuid
+        const userData: User = { 
+          id: userId, 
+          playerUuid: result.playerUuid || '',
+          email: null, 
+          phone: null 
+        };
         setUser(userData);
         localStorage.setItem('chatplay_user', JSON.stringify(userData));
       }
@@ -125,7 +131,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const verifyResult = await verifyResponse.json();
 
       if (verifyResult.success) {
-        const userData: User = { id: verifyResult.userId, email, phone: null };
+        const userData: User = { 
+          id: verifyResult.userId, 
+          playerUuid: verifyResult.playerUuid || '',
+          email, 
+          phone: null 
+        };
         setUser(userData);
         localStorage.setItem('chatplay_user', JSON.stringify(userData));
       }

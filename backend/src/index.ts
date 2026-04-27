@@ -38,72 +38,28 @@ io.on('connection', (socket) => {
     
     switch (event.type) {
       case 'join_game':
-        const playerId = `player_${socket.id.slice(0, 8)}`;
-        const familyId = `family_${socket.id.slice(0, 8)}`;
-        
-        clients.set(socket.id, { playerId, familyId });
-        
-        socket.emit('message', {
-          type: 'thread_update',
-          data: [
-            {
-              id: 'thread_consiglieri',
-              npcId: 'npc_consiglieri',
-              npcName: 'Consigliere',
-              lastMessageAt: new Date().toISOString(),
-              unreadCount: 1,
-              isArchive: false
-            },
-            {
-              id: 'thread_luca',
-              npcId: 'npc_luca',
-              npcName: 'Luca "The Blade"',
-              lastMessageAt: new Date().toISOString(),
-              unreadCount: 0,
-              isArchive: false
-            },
-            {
-              id: 'thread_marco',
-              npcId: 'npc_marco',
-              npcName: 'Marco',
-              lastMessageAt: new Date().toISOString(),
-              unreadCount: 0,
-              isArchive: false
-            }
-          ]
-        });
-
+        // Frontend now handles threads from database - just acknowledge
         socket.emit('message', {
           type: 'game_state',
           data: {
-            familyId,
-            familyName: 'The Family',
-            money: 100000,
-            territories: ['Downtown']
-          }
-        });
-
-        socket.emit('message', {
-          type: 'npc_message',
-          data: {
-            npcId: 'npc_consiglieri',
-            content: "Boss, we've been waiting for you. Things have been... complicated while you were away. We need to discuss the situation with the territories. Meet me when you're ready.",
+            connected: true,
             timestamp: new Date().toISOString()
           }
         });
         break;
 
       case 'send_message':
+        // Forward to AI for response
         const client = clients.get(socket.id);
         if (client && event.data && typeof event.data === 'object' && 'content' in event.data) {
           const content = (event.data as { content: string }).content;
           
+// Simulate AI response (replace with real AI call later)
           setTimeout(() => {
             socket.emit('message', {
               type: 'npc_message',
               data: {
-                npcId: 'npc_consiglieri',
-                content: `I understand, Boss. "${content.substring(0, 50)}${content.length > 50 ? '...' : ''}" - we'll discuss this further. The family is listening.`,
+                content: `I understand. "${content.substring(0, 30)}${content.length > 30 ? '...' : ''}" - The family is listening.`,
                 timestamp: new Date().toISOString()
               }
             });
@@ -111,25 +67,13 @@ io.on('connection', (socket) => {
         }
         break;
 
+      case 'select_npc':
       case 'mark_read':
+      case 'leave_thread':
         break;
 
-      case 'select_npc': {
-        const clientForNpc = clients.get(socket.id);
-        if (clientForNpc && event.data && typeof event.data === 'object' && 'npcId' in event.data) {
-          const npcId = (event.data as { npcId: string }).npcId;
-          
-          // Send back empty thread history for the selected NPC
-          socket.emit('message', {
-            type: 'thread_history',
-            data: {
-              npcId,
-              messages: []
-            }
-          });
-        }
-        break;
-      }
+      default:
+        console.log('Unknown event type:', event.type);
     }
   });
 

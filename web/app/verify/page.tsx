@@ -51,15 +51,38 @@ export default function VerifyPage() {
         sessionStorage.removeItem('pending_email');
         sessionStorage.removeItem('pending_phone');
         
-        // Store user session
+        // Store user session with playerUuid
         const userData = { 
           id: result.userId, 
+          playerUuid: result.playerUuid || '',
           email: email || null, 
           phone: phone || null 
         };
         localStorage.setItem('chatplay_user', JSON.stringify(userData));
         
-        setMessage('Verified! Redirecting...');
+        setMessage('Verified! Checking profile...');
+        
+        // Check if user has completed their family profile
+        const profileEmail = email || sessionStorage.getItem('pending_email');
+        if (profileEmail) {
+          try {
+            const profileResponse = await fetch('/api/register', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ action: 'get_profile', email: profileEmail }),
+            });
+            const profileResult = await profileResponse.json();
+            
+            // Redirect to family info if profile not completed
+            if (!profileResult.profile?.family_name) {
+              window.location.href = '/familyinfo';
+              return;
+            }
+          } catch (e) {
+            // On error, proceed to game - they can set up profile later
+          }
+        }
+        
         window.location.href = '/';
       } else {
         setMessage(result.message);

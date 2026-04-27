@@ -58,14 +58,7 @@ export async function sendOtpEmail(email: string): Promise<SendOtpResult> {
       };
     }
 
-    // Check if already verified - don't send code again
-    if (user.verified) {
-      return {
-        success: false,
-        message: 'Email already verified',
-      };
-    }
-    
+    // User exists - send OTP code for login (regardless of verified status)
     const code = generateOtp();
     await storeOtpCode(user.id, code, 'email');
     
@@ -201,6 +194,7 @@ export interface VerifyOtpResult {
   success: boolean;
   message: string;
   userId?: number;
+  playerUuid?: string;
 }
 
 export async function verifyOtp(userId: number, code: string): Promise<VerifyOtpResult> {
@@ -362,6 +356,7 @@ export interface VerifyAuthenticationResult {
   success: boolean;
   message: string;
   userId?: number;
+  playerUuid?: string;
 }
 
 export async function verifyPasskeyAuthentication(

@@ -10,6 +10,7 @@ import {
   generatePasskeyAuthenticationOptions,
   verifyPasskeyAuthentication,
 } from '@/lib/auth';
+import { getUserById } from '@/lib/db';
 
 export async function POST(request: NextRequest) {
   try {
@@ -59,6 +60,15 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ success: false, message: 'User ID and code required' }, { status: 400 });
         }
         const result = await verifyOtp(userId, code);
+        
+        // If successful, also fetch the playerUuid
+        if (result.success) {
+          const user = await getUserById(userId);
+          if (user) {
+            result.playerUuid = user.player_uuid;
+          }
+        }
+        
         return NextResponse.json(result);
       }
 
@@ -95,6 +105,15 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ success: false, message: 'Email and response required' }, { status: 400 });
         }
         const result = await verifyPasskeyAuthentication(email, response);
+        
+        // If successful, also fetch the playerUuid
+        if (result.success && result.userId) {
+          const user = await getUserById(result.userId);
+          if (user) {
+            result.playerUuid = user.player_uuid;
+          }
+        }
+        
         return NextResponse.json(result);
       }
 

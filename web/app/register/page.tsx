@@ -34,11 +34,12 @@ export default function RegisterPage() {
 
     try {
       // First check if there's an unverified user with this email and delete it
-      await fetch('/api/auth', {
+      const loginCheckResponse = await fetch('/api/auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ action: 'login_check', email: data.email }),
       });
+      const loginCheckResult = await loginCheckResponse.json();
 
       // Create user record
       const response = await fetch('/api/register', {
@@ -76,6 +77,21 @@ export default function RegisterPage() {
           setMessage('User created but failed to send code. Try resending.');
         }
       } else {
+        // If email already registered, check if verified
+        if (result.message === 'Email already registered') {
+          const checkResponse = await fetch('/api/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'check_registration', email: data.email }),
+          });
+          const checkResult = await checkResponse.json();
+          
+          if (checkResult.profile?.verified) {
+            // User already has an account, redirect to login
+            window.location.href = '/login';
+            return;
+          }
+        }
         setMessage(result.message);
       }
     } catch (error) {

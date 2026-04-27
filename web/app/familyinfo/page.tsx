@@ -21,6 +21,8 @@ export default function FamilyInfoPage() {
   });
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
@@ -76,16 +78,64 @@ export default function FamilyInfoPage() {
       });
       const result = await response.json();
 
-      setLoading(false);
-
       if (result.success) {
+        // Generate NPCs for the user
+        await fetch('/api/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'generate_npcs', email: user.email }),
+        });
+        
         setMessage('Family profile saved!');
+        
+        // Auto-redirect to game after short delay
+        setTimeout(() => {
+          window.location.href = '/';
+        }, 1000);
       } else {
+        setLoading(false);
         setMessage(result.message);
       }
     } catch (error) {
       setLoading(false);
       setMessage('Failed to save profile');
+    }
+  };
+
+  const handleDeleteFamilyInfo = async () => {
+    if (!user?.email || deleting) return;
+
+    setDeleting(true);
+    try {
+      const response = await fetch('/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'clear_family_info', email: user.email }),
+      });
+      const result = await response.json();
+
+      if (result.success) {
+        // Clear local form
+        setFormData({
+          familyName: '',
+          title: '',
+          gender: '',
+          sexualPreference: ''
+        });
+        setMessage('Family info deleted');
+        setShowDeleteConfirm(false);
+        
+        // Redirect to game
+        setTimeout(() => {
+          window.location.href = '/';
+        }, 1000);
+      } else {
+        setMessage(result.message);
+        setDeleting(false);
+      }
+    } catch (error) {
+      setMessage('Failed to delete family info');
+      setDeleting(false);
     }
   };
 
@@ -173,7 +223,88 @@ export default function FamilyInfoPage() {
               Back to Game
             </button>
           </a>
+
+          {formData.familyName && (
+            <button 
+              onClick={() => setShowDeleteConfirm(true)} 
+              style={{ 
+                marginTop: '1.5rem', 
+                width: '100%', 
+                padding: '0.75rem',
+                background: '#4a1515',
+                border: '1px solid #6a2020',
+                color: '#ff9999',
+                fontFamily: 'inherit',
+                fontSize: '0.875rem',
+                cursor: 'pointer',
+                borderRadius: '2px'
+              }}
+            >
+              Delete Family Info
+            </button>
+          )}
         </div>
+
+        {showDeleteConfirm && (
+          <div style={{
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            background: 'rgba(0,0,0,0.8)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 1000
+          }}>
+            <div style={{
+              background: '#1a1a1a',
+              border: '1px solid #444',
+              padding: '2rem',
+              maxWidth: '400px',
+              textAlign: 'center'
+            }}>
+              <h2 style={{ color: '#ff6666', marginTop: 0 }}>Delete Family Info?</h2>
+              <p style={{ color: '#888', marginBottom: '1.5rem' }}>
+                Warning: Deleting your Family Info will result in complete loss of all game information and progress. This cannot be undone.
+              </p>
+              <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
+                <button 
+                  onClick={handleDeleteFamilyInfo}
+                  disabled={deleting}
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    background: '#4a1515',
+                    border: '1px solid #6a2020',
+                    color: '#ff9999',
+                    fontFamily: 'inherit',
+                    fontSize: '0.875rem',
+                    cursor: 'pointer',
+                    borderRadius: '2px'
+                  }}
+                >
+                  {deleting ? 'Deleting...' : 'Yes, Delete'}
+                </button>
+                <button 
+                  onClick={() => setShowDeleteConfirm(false)}
+                  style={{
+                    padding: '0.75rem 1.5rem',
+                    background: '#333',
+                    border: '1px solid #444',
+                    color: '#e0e0e0',
+                    fontFamily: 'inherit',
+                    fontSize: '0.875rem',
+                    cursor: 'pointer',
+                    borderRadius: '2px'
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
 
         {message && <p className={styles.message}>{message}</p>}
         
