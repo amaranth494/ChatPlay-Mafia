@@ -140,16 +140,7 @@ export default function Home() {
       }
     });
 
-    client.on('thread_update', (data: Thread[]) => {
-      console.log('[Client] Received thread_update:', data.length, 'threads');
-      // Only update threads from socket if we don't have NPCs from database yet
-      if (threads.length === 0 && hasFamilyInfo) {
-        setThreads(data);
-      }
-    });
-
-    client.on('game_state', () => {});
-
+    // Only log actual errors from socket
     client.on('error', (data: { message: string }) => {
       console.error('Server error:', data.message);
     });
