@@ -36,6 +36,7 @@ async function runMigrations(): Promise<void> {
     const columnsToAdd = [
       { name: 'first_name', type: 'VARCHAR(100)' },
       { name: 'last_name', type: 'VARCHAR(100)' },
+      { name: 'verified', type: 'BOOLEAN DEFAULT FALSE' },
       { name: 'registered', type: 'BOOLEAN DEFAULT FALSE' },
       { name: 'family_name', type: 'VARCHAR(100)' },
       { name: 'title', type: 'VARCHAR(50)' },
@@ -74,6 +75,7 @@ export async function initDatabase(): Promise<void> {
         phone VARCHAR(50) UNIQUE,
         first_name VARCHAR(100),
         last_name VARCHAR(100),
+        verified BOOLEAN DEFAULT FALSE,
         registered BOOLEAN DEFAULT FALSE,
         family_name VARCHAR(100),
         title VARCHAR(50),
@@ -207,6 +209,8 @@ export interface User {
   id: number;
   email: string | null;
   phone: string | null;
+  verified: boolean;
+  registered: boolean;
   created_at: Date;
   updated_at: Date;
 }
@@ -303,7 +307,7 @@ export async function storeOtpCode(userId: number, code: string, type: 'email' |
   }
 }
 
-// Verify OTP code
+// Verify OTP code and mark user as verified
 export async function verifyOtpCode(userId: number, code: string): Promise<boolean> {
   const client = await pool.connect();
   try {
@@ -316,6 +320,11 @@ export async function verifyOtpCode(userId: number, code: string): Promise<boole
       // Delete the used code
       await client.query(
         'DELETE FROM otp_codes WHERE user_id = $1',
+        [userId]
+      );
+      // Mark user as verified
+      await client.query(
+        'UPDATE users SET verified = TRUE WHERE id = $1',
         [userId]
       );
       return true;
@@ -396,16 +405,16 @@ export interface UserProfile {
   updated_at: Date;
 }
 
-// Check if user is registered
+// Check if user is registered (verified)
 export async function isUserRegistered(email: string): Promise<boolean> {
   const client = await pool.connect();
   try {
     const result = await client.query(
-      'SELECT registered FROM users WHERE email = $1',
+      'SELECT verified FROM users WHERE email = $1',
       [email]
     );
     if (result.rows.length === 0) return false;
-    return result.rows[0].registered === true;
+    return result.rows[0].verified === true;
   } finally {
     client.release();
   }
@@ -484,7 +493,7 @@ export async function createUser(email: string, phone: string | null, firstName:
   const client = await pool.connect();
   try {
     const result = await client.query(
-      'INSERT INTO users (email, phone, first_name, last_name) VALUES ($1, $2, $3, $4) RETURNING id',
+      'INSERT INTO users (email, phone, first_name, last_name, verified) VALUES ($1, $2, $3, $4, FALSE) RETURNING id',
       [email, phone, firstName, lastName]
     );
     return result.rows[0].id;

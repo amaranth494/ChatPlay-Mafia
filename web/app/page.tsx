@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useAuth } from '@/lib/auth-context';
 import { client, Thread, NpcMessage, ThreadHistory } from '@/lib/socket';
 import styles from './page.module.css';
@@ -85,7 +85,7 @@ export default function Home() {
     };
   }, []);
 
-  const handleConnect = useCallback(async () => {
+  const handleConnect = async () => {
     try {
       await client.connect();
       setConnected(true);
@@ -93,7 +93,7 @@ export default function Home() {
     } catch (error) {
       console.error('Failed to connect:', error);
     }
-  }, [user?.id]);
+  };
 
   const handleSend = async () => {
     if (!input.trim() || sending || !activeThread) return;
@@ -124,6 +124,13 @@ export default function Home() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
+  // Auto-connect on login
+  useEffect(() => {
+    if (isAuthenticated && !connected) {
+      handleConnect();
+    }
+  }, [isAuthenticated]);
+
   // Redirect to login if not authenticated
   if (isLoading) {
     return (
@@ -148,14 +155,31 @@ export default function Home() {
           </a>
         </div>
       </div>
-);
+    );
   }
 
-  useEffect(() => {
-    if (isAuthenticated && !connected) {
-      handleConnect();
-    }
-  }, [isAuthenticated, connected, handleConnect]);
+  // Show loading while socket connects
+  if (!connected) {
+    return (
+      <div className={styles.container}>
+        <div className={styles.login}>
+          <h1>ChatPlay Mafia</h1>
+          <p>Connecting...</p>
+        </div>
+        {user && (
+          <div className={styles.userMenu}>
+            <button 
+              className={styles.userMenuButton}
+              onClick={() => setShowUserMenu(!showUserMenu)}
+            >
+              <span className={styles.userIcon}>👤</span>
+              <span className={styles.userEmail}>{user?.email}</span>
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className={styles.container}>
@@ -280,7 +304,6 @@ export default function Home() {
           )}
         </div>
       )}
-
-      </div>
+    </div>
   );
 }

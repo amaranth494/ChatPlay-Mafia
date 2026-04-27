@@ -33,6 +33,13 @@ export default function RegisterPage() {
     setMessage('');
 
     try {
+      // First check if there's an unverified user with this email and delete it
+      await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'login_check', email: data.email }),
+      });
+
       // Create user record
       const response = await fetch('/api/register', {
         method: 'POST',
@@ -52,9 +59,22 @@ export default function RegisterPage() {
       if (result.success) {
         setUserId(result.userId);
         setMode('otp');
-        setMessage(`Verification code sent to ${data.email}`);
         sessionStorage.setItem('pending_email', data.email);
         sessionStorage.setItem('pending_user_id', result.userId.toString());
+
+        // Send OTP email for registration
+        const otpResponse = await fetch('/api/auth', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'send_otp_email_for_registration', email: data.email }),
+        });
+        const otpResult = await otpResponse.json();
+
+        if (otpResult.success) {
+          setMessage(`Verification code sent to ${data.email}`);
+        } else {
+          setMessage('User created but failed to send code. Try resending.');
+        }
       } else {
         setMessage(result.message);
       }
@@ -93,8 +113,8 @@ export default function RegisterPage() {
         sessionStorage.removeItem('pending_user_id');
         sessionStorage.removeItem('pending_email');
         
-        // Redirect to profile setup
-        window.location.href = '/profile';
+        // Redirect to main game
+        window.location.href = '/';
       } else {
         setMessage(result.message);
       }

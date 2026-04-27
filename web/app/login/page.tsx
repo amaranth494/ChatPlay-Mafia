@@ -19,6 +19,23 @@ export default function LoginPage() {
     setShowRegister(false);
     
     try {
+      // First check if there's an unverified user with this email
+      const checkResponse = await fetch('/api/auth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'login_check', email }),
+      });
+      const checkResult = await checkResponse.json();
+      
+      // If unverified user was found and deleted, redirect to registration
+      if (checkResult.message === 'unverified_user' && checkResult.deleted) {
+        setLoading(false);
+        setMessage('Account not verified. Please complete registration.');
+        setShowRegister(true);
+        return;
+      }
+      
+      // Proceed with normal login
       const response = await fetch('/api/auth', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -162,7 +179,7 @@ export default function LoginPage() {
         {showRegister && (
           <div className={styles.registerPrompt}>
             <p className={styles.registerPromptText}>
-              The {mode === 'sms' ? 'phone number' : 'email'} you entered isn&apos;t valid. Please enter a different {mode === 'sms' ? 'number' : 'email'}, return to the main login page or click Register below if you&apos;re a New User.
+              The {mode === 'sms' ? 'phone number' : 'email'} you entered isn&apos;t registered. Please enter a different {mode === 'sms' ? 'number' : 'email'} or click Register below if you&apos;re a New User.
             </p>
             <a href="/register">
               <button className={styles.registerButton}>

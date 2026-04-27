@@ -17,6 +17,7 @@ import {
   updatePasskeyCounter,
   storeOtpCode,
   verifyOtpCode,
+  deleteUser,
 } from './db';
 import { sendOtpEmail as sendEmailOtp, sendSms as sendSmsOtp } from './email';
 
@@ -47,13 +48,21 @@ async function sendSmsOtpCode(phone: string, code: string): Promise<boolean> {
 
 export async function sendOtpEmail(email: string): Promise<SendOtpResult> {
   try {
-    // First check if user exists
+    // First check if user exists (verified or unverified)
     const user = await getUserByEmail(email);
     
     if (!user) {
       return {
         success: false,
         message: 'Email not found',
+      };
+    }
+
+    // Check if already verified - don't send code again
+    if (user.verified) {
+      return {
+        success: false,
+        message: 'Email already verified',
       };
     }
     
@@ -72,6 +81,81 @@ export async function sendOtpEmail(email: string): Promise<SendOtpResult> {
     return {
       success: false,
       message: 'Failed to send verification code',
+    };
+  }
+}
+
+// For registration flow - allows sending OTP even to unverified users
+export async function sendOtpEmailForRegistration(email: string): Promise<SendOtpResult> {
+  try {
+    const user = await getUserByEmail(email);
+    
+    if (!user) {
+      return {
+        success: false,
+        message: 'Email not found',
+      };
+    }
+
+    // Check if already verified - shouldn't happen in registration flow
+    if (user.verified) {
+      return {
+        success: false,
+        message: 'Email already verified',
+      };
+    }
+    
+    const code = generateOtp();
+    await storeOtpCode(user.id, code, 'email');
+    
+    const sent = await sendEmailOtpCode(email, code);
+    
+    return {
+      success: true,
+      message: sent ? `Verification code sent to ${email}` : `Code: ${code}`,
+      userId: user.id,
+    };
+  } catch (error) {
+    console.error('[Auth] Send OTP for registration error:', error);
+    return {
+      success: false,
+      message: 'Failed to send verification code',
+    };
+  }
+}
+
+// Check if user exists with unverified status - delete and redirect to registration
+export async function checkAndDeleteUnverifiedUser(email: string): Promise<{ success: boolean; message: string; deleted?: boolean }> {
+  try {
+    const user = await getUserByEmail(email);
+    
+    if (!user) {
+      return {
+        success: true, // No user, allow login attempt
+        message: 'No unverified user found',
+      };
+    }
+
+    // If user is unverified, delete them and redirect to registration
+    if (!user.verified) {
+      await deleteUser(email);
+      return {
+        success: false,
+        message: 'unverified_user',
+        deleted: true,
+      };
+    }
+
+    // Verified user exists
+    return {
+      success: true,
+      message: 'User is verified',
+    };
+  } catch (error) {
+    console.error('[Auth] Check unverified user error:', error);
+    return {
+      success: false,
+      message: 'Check failed',
     };
   }
 }

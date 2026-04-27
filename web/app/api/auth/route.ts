@@ -3,6 +3,8 @@ import {
   sendOtpEmail,
   sendOtpSms,
   verifyOtp,
+  sendOtpEmailForRegistration,
+  checkAndDeleteUnverifiedUser,
   generatePasskeyRegistrationOptions,
   verifyPasskeyRegistration,
   generatePasskeyAuthenticationOptions,
@@ -21,6 +23,24 @@ export async function POST(request: NextRequest) {
           return NextResponse.json({ success: false, message: 'Email required' }, { status: 400 });
         }
         const result = await sendOtpEmail(email);
+        return NextResponse.json(result);
+      }
+
+      case 'send_otp_email_for_registration': {
+        const { email } = data;
+        if (!email) {
+          return NextResponse.json({ success: false, message: 'Email required' }, { status: 400 });
+        }
+        const result = await sendOtpEmailForRegistration(email);
+        return NextResponse.json(result);
+      }
+
+      case 'login_check': {
+        const { email } = data;
+        if (!email) {
+          return NextResponse.json({ success: false, message: 'Email required' }, { status: 400 });
+        }
+        const result = await checkAndDeleteUnverifiedUser(email);
         return NextResponse.json(result);
       }
 
