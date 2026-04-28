@@ -136,10 +136,6 @@ io.on('connection', (socket) => {
         socket.emit('message', {
           type: 'game_state',
           data: {
-            familyId,
-            familyName: 'The Family',
-            money: 100000,
-            territories: ['Downtown'],
             dayNumber: gameState.dayNumber,
             isDay: gameState.isDay,
             label: gameState.isDay ? `Day ${gameState.dayNumber}` : `Night ${gameState.dayNumber}`
@@ -147,26 +143,6 @@ io.on('connection', (socket) => {
         });
         console.log('[Server] Sent game_state');
         console.log(`[CURRENT GAME TIME] ${gameState.isDay ? 'Day' : 'Night'} ${gameState.dayNumber}`);
-
-        // Send welcome message from Consigliere
-        const npc = npcs['npc_consiglieri'];
-        const welcomeMsg: Message = {
-          id: `msg_${Date.now()}`,
-          sender: 'npc',
-          content: "Boss, we've been waiting for you. Things have been... complicated while you were away. We need to discuss the situation with the territories. Meet me when you're ready.",
-          timestamp: new Date().toISOString()
-        };
-        npc.messages.push(welcomeMsg);
-        npc.messageCount++;
-
-        socket.emit('message', {
-          type: 'npc_message',
-          data: {
-            npcId: npc.id,
-            content: welcomeMsg.content,
-            timestamp: welcomeMsg.timestamp
-          }
-        });
         break;
       }
 

@@ -92,8 +92,6 @@ class ChatPlayClient {
       });
 
       this.socket.on('message', (event: ServerEvent) => {
-        console.log('[Socket] Received event:', event.type, JSON.stringify(event.data));
-        
         if (event.type === 'game_state') {
           const gs = event.data as unknown as Record<string, unknown>;
           if (gs.label) {
@@ -104,8 +102,6 @@ class ChatPlayClient {
         const handlers = this.handlers.get(event.type);
         if (handlers) {
           handlers.forEach(handler => handler(event.data));
-        } else {
-          console.log('[Socket] No handler for event type:', event.type);
         }
       });
     });

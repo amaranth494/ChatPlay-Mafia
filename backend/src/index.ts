@@ -92,12 +92,9 @@ io.on('connection', (socket) => {
     
     switch (event.type) {
       case 'join_game':
-        // Frontend now handles threads from database - just acknowledge
         socket.emit('message', {
           type: 'game_state',
           data: {
-            connected: true,
-            timestamp: new Date().toISOString(),
             dayNumber: gameState.dayNumber,
             isDay: gameState.isDay,
             label: gameState.isDay ? `Day ${gameState.dayNumber}` : `Night ${gameState.dayNumber}`
