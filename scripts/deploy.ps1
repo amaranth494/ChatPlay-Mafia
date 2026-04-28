@@ -18,7 +18,7 @@ Write-Host "Building backend..." -ForegroundColor Yellow
 Set-Location backend
 npm install
 Remove-Item -Recurse -Force dist -ErrorAction SilentlyContinue
-npx tsc
+npx tsc --force
 Set-Location ..
 
 # Commit and push to GitHub production branch
