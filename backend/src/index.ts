@@ -27,6 +27,44 @@ interface ConnectedClient {
 
 const clients = new Map<string, ConnectedClient>();
 
+interface GameState {
+  dayNumber: number;
+  isDay: boolean;
+}
+
+const gameState: GameState = {
+  dayNumber: 1,
+  isDay: true
+};
+
+function advanceTick() {
+  const now = new Date();
+  const timeStr = now.toISOString().replace('T', ' ').substring(0, 19);
+  
+  if (gameState.isDay) {
+    gameState.isDay = false;
+    console.log(`[TICK] [${timeStr}] Night ${gameState.dayNumber}`);
+  } else {
+    gameState.isDay = true;
+    gameState.dayNumber++;
+    console.log(`[TICK] [${timeStr}] Day ${gameState.dayNumber}`);
+  }
+  
+  io.emit('message', {
+    type: 'game_tick',
+    data: {
+      dayNumber: gameState.dayNumber,
+      isDay: gameState.isDay,
+      label: gameState.isDay ? `Day ${gameState.dayNumber}` : `Night ${gameState.dayNumber}`
+    }
+  });
+}
+
+const TICK_INTERVAL = 30 * 60 * 1000;
+
+setInterval(advanceTick, TICK_INTERVAL);
+console.log(`[Server] Game tick cycle started (every ${TICK_INTERVAL / 60000} minutes)`);
+
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
@@ -44,9 +82,13 @@ io.on('connection', (socket) => {
           type: 'game_state',
           data: {
             connected: true,
-            timestamp: new Date().toISOString()
+            timestamp: new Date().toISOString(),
+            dayNumber: gameState.dayNumber,
+            isDay: gameState.isDay,
+            label: gameState.isDay ? `Day ${gameState.dayNumber}` : `Night ${gameState.dayNumber}`
           }
         });
+        console.log(`[CURRENT GAME TIME] ${gameState.isDay ? 'Day' : 'Night'} ${gameState.dayNumber}`);
         break;
 
       case 'send_message':
