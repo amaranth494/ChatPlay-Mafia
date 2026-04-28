@@ -112,9 +112,9 @@ class ChatPlayClient {
         }
         
         if (event.type === 'game_tick') {
-          const tick = event.data as unknown as Record<string, unknown>;
+          const tick = event.data as unknown as { totalTicks: number; label: string };
           const time = new Date().toISOString().replace('T', ' ').substring(0, 19);
-          console.log(`[TICK] [${time}] Tick=${tick.totalTicks} ${tick.label}`);
+          console.log(`[TICK] [${time}] Tick=${tick?.totalTicks ?? '?'} ${tick?.label ?? ''}`);
         }
         
         const handlers = this.handlers.get(event.type);
