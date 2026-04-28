@@ -28,34 +28,46 @@ interface ConnectedClient {
 const clients = new Map<string, ConnectedClient>();
 
 interface GameState {
+  totalTicks: number;
   dayNumber: number;
   isDay: boolean;
 }
 
 const gameState: GameState = {
+  totalTicks: 0,
   dayNumber: 1,
   isDay: true
 };
 
+function resetGameTick() {
+  gameState.totalTicks = 0;
+  gameState.dayNumber = 1;
+  gameState.isDay = true;
+}
+
 function advanceTick() {
-  const now = new Date();
-  const timeStr = now.toISOString().replace('T', ' ').substring(0, 19);
+  gameState.totalTicks++;
   
   if (gameState.isDay) {
     gameState.isDay = false;
-    console.log(`[TICK] [${timeStr}] Night ${gameState.dayNumber}`);
   } else {
     gameState.isDay = true;
     gameState.dayNumber++;
-    console.log(`[TICK] [${timeStr}] Day ${gameState.dayNumber}`);
   }
+  
+  const now = new Date();
+  const timeStr = now.toISOString().replace('T', ' ').substring(0, 19);
+  const label = gameState.isDay ? `Day ${gameState.dayNumber}` : `Night ${gameState.dayNumber}`;
+  
+  console.log(`[TICK] [${timeStr}] Tick=${gameState.totalTicks} ${label}`);
   
   io.emit('message', {
     type: 'game_tick',
     data: {
+      totalTicks: gameState.totalTicks,
       dayNumber: gameState.dayNumber,
       isDay: gameState.isDay,
-      label: gameState.isDay ? `Day ${gameState.dayNumber}` : `Night ${gameState.dayNumber}`
+      label: label
     }
   });
 }
@@ -66,16 +78,18 @@ function scheduleNextTick() {
   const utcSeconds = now.getUTCSeconds();
   const utcMs = now.getUTCMilliseconds();
   
-  const nextTickMs = (30 - (utcMinutes % 30)) * 60 * 1000 - (utcSeconds * 1000 + utcMs);
-  const adjustedMs = nextTickMs <= 0 ? 30 * 60 * 1000 : nextTickMs;
+  const minutesUntilNext = (30 - (utcMinutes % 30)) % 30;
+  let delayMs = minutesUntilNext * 60 * 1000 - (utcSeconds * 1000 + utcMs);
+  
+  if (delayMs <= 0) delayMs += 30 * 60 * 1000;
   
   setTimeout(() => {
     advanceTick();
-    setInterval(advanceTick, 30 * 60 * 1000);
-  }, adjustedMs);
+  }, delayMs);
   
-  const nextTickIn = adjustedMs / 1000;
-  console.log(`[Server] First tick in ${nextTickIn.toFixed(0)}s, then every 30 min at :00 and :30 UTC`);
+  setInterval(advanceTick, 30 * 60 * 1000);
+  
+  console.log(`[Server] Next tick in ${(delayMs / 1000).toFixed(0)}s, then every 30 min at :00 and :30 UTC`);
 }
 
 scheduleNextTick();
@@ -95,12 +109,13 @@ io.on('connection', (socket) => {
         socket.emit('message', {
           type: 'game_state',
           data: {
+            totalTicks: gameState.totalTicks,
             dayNumber: gameState.dayNumber,
             isDay: gameState.isDay,
             label: gameState.isDay ? `Day ${gameState.dayNumber}` : `Night ${gameState.dayNumber}`
           }
         });
-        console.log(`[CURRENT GAME TIME] ${gameState.isDay ? 'Day' : 'Night'} ${gameState.dayNumber}`);
+        console.log(`[CURRENT GAME TIME] ${gameState.isDay ? 'Day' : 'Night'} ${gameState.dayNumber} (Tick=${gameState.totalTicks})`);
         break;
 
       case 'send_message':
@@ -125,6 +140,20 @@ io.on('connection', (socket) => {
       case 'select_npc':
       case 'mark_read':
       case 'leave_thread':
+        break;
+
+      case 'reset_game':
+        resetGameTick();
+        console.log(`[GAME] Game reset to Tick=0, Day 1`);
+        socket.emit('message', {
+          type: 'game_state',
+          data: {
+            totalTicks: gameState.totalTicks,
+            dayNumber: gameState.dayNumber,
+            isDay: gameState.isDay,
+            label: gameState.isDay ? `Day ${gameState.dayNumber}` : `Night ${gameState.dayNumber}`
+          }
+        });
         break;
 
       default:
