@@ -1,6 +1,8 @@
-# ChatPlay Mafia - Railway Deployment
-Write-Host "ChatPlay Mafia - Railway Deployment" -ForegroundColor Cyan
-Write-Host "====================================" -ForegroundColor Cyan
+# ChatPlay Mafia - Deploy Script
+# Pushes changes to GitHub production branch
+# Railway deployment happens automatically via GitHub integration
+Write-Host "ChatPlay Mafia - Deploy Script v2" -ForegroundColor Cyan
+Write-Host "==============================" -ForegroundColor Cyan
 
 # Build frontend
 Write-Host ""
@@ -19,31 +21,16 @@ Remove-Item -Recurse -Force dist -ErrorAction SilentlyContinue
 npx tsc
 Set-Location ..
 
-# Push to GitHub production branch
+# Commit and push to GitHub production branch
 Write-Host ""
-Write-Host "Pushing to GitHub..." -ForegroundColor Yellow
-git push origin production
-
-# Deploy to Railway
-Write-Host ""
-Write-Host "Deploying to Railway..." -ForegroundColor Yellow
-
-$railwayExists = Get-Command railway -ErrorAction SilentlyContinue
-if (-not $railwayExists) {
-    Write-Host "Railway CLI not found. Install with: npm i -g @railway/cli" -ForegroundColor Red
-    Write-Host "Skipping Railway deployment."
-    exit 0
+Write-Host "Committing and pushing to GitHub production..." -ForegroundColor Yellow
+git add -A
+$status = git status --porcelain
+if ($status) {
+    git commit -m "Deploy: $(Get-Date -Format 'yyyy-MM-dd HH:mm')"
 }
-
-$railwayLoggedIn = railway whoami 2>$null
-if (-not $LASTEXITCODE -eq 0) {
-    Write-Host "Not logged in to Railway. Run: railway login" -ForegroundColor Red
-    Write-Host "Skipping Railway deployment."
-    exit 0
-}
-
-railway up --service "ChatPlay-Mafia"
+git push origin production --force
 
 Write-Host ""
 Write-Host "Deployment complete!" -ForegroundColor Green
-Write-Host "Run 'railway open' to view your app."
+Write-Host "Railway will deploy automatically from GitHub."

@@ -139,10 +139,14 @@ io.on('connection', (socket) => {
             familyId,
             familyName: 'The Family',
             money: 100000,
-            territories: ['Downtown']
+            territories: ['Downtown'],
+            dayNumber: gameState.dayNumber,
+            isDay: gameState.isDay,
+            label: gameState.isDay ? `Day ${gameState.dayNumber}` : `Night ${gameState.dayNumber}`
           }
         });
         console.log('[Server] Sent game_state');
+        console.log(`[CURRENT GAME TIME] ${gameState.isDay ? 'Day' : 'Night'} ${gameState.dayNumber}`);
 
         // Send welcome message from Consigliere
         const npc = npcs['npc_consiglieri'];
@@ -360,6 +364,44 @@ case 'select_npc': {
     clients.delete(socket.id);
   });
 });
+
+interface GameState {
+  dayNumber: number;
+  isDay: boolean;
+}
+
+const gameState: GameState = {
+  dayNumber: 1,
+  isDay: true
+};
+
+function advanceTick() {
+  const now = new Date();
+  const timeStr = now.toISOString().replace('T', ' ').substring(0, 19);
+  
+  if (gameState.isDay) {
+    gameState.isDay = false;
+    console.log(`[TICK] [${timeStr}] Night ${gameState.dayNumber}`);
+  } else {
+    gameState.isDay = true;
+    gameState.dayNumber++;
+    console.log(`[TICK] [${timeStr}] Day ${gameState.dayNumber}`);
+  }
+  
+  io.emit('message', {
+    type: 'game_tick',
+    data: {
+      dayNumber: gameState.dayNumber,
+      isDay: gameState.isDay,
+      label: gameState.isDay ? `Day ${gameState.dayNumber}` : `Night ${gameState.dayNumber}`
+    }
+  });
+}
+
+const TICK_INTERVAL = 30 * 60 * 1000;
+
+setInterval(advanceTick, TICK_INTERVAL);
+console.log(`[Server] Game tick cycle started (every ${TICK_INTERVAL / 60000} minutes)`);
 
 app.prepare().then(() => {
   httpServer.listen(port, () => {

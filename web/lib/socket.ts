@@ -39,6 +39,9 @@ export interface GameState {
   familyName: string;
   money: number;
   territories: string[];
+  dayNumber?: number;
+  isDay?: boolean;
+  label?: string;
 }
 
 export type ServerEvent =
@@ -89,7 +92,15 @@ class ChatPlayClient {
       });
 
       this.socket.on('message', (event: ServerEvent) => {
-        console.log('[Socket] Received event:', event.type, event.data);
+        console.log('[Socket] Received event:', event.type, JSON.stringify(event.data));
+        
+        if (event.type === 'game_state') {
+          const gs = event.data as unknown as Record<string, unknown>;
+          if (gs.label) {
+            console.log(`[CURRENT GAME TIME] ${gs.label}`);
+          }
+        }
+        
         const handlers = this.handlers.get(event.type);
         if (handlers) {
           handlers.forEach(handler => handler(event.data));
