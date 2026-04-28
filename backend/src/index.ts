@@ -60,10 +60,25 @@ function advanceTick() {
   });
 }
 
-const TICK_INTERVAL = 30 * 60 * 1000;
+function scheduleNextTick() {
+  const now = new Date();
+  const utcMinutes = now.getUTCMinutes();
+  const utcSeconds = now.getUTCSeconds();
+  const utcMs = now.getUTCMilliseconds();
+  
+  const nextTickMs = (30 - (utcMinutes % 30)) * 60 * 1000 - (utcSeconds * 1000 + utcMs);
+  const adjustedMs = nextTickMs <= 0 ? 30 * 60 * 1000 : nextTickMs;
+  
+  setTimeout(() => {
+    advanceTick();
+    setInterval(advanceTick, 30 * 60 * 1000);
+  }, adjustedMs);
+  
+  const nextTickIn = adjustedMs / 1000;
+  console.log(`[Server] First tick in ${nextTickIn.toFixed(0)}s, then every 30 min at :00 and :30 UTC`);
+}
 
-setInterval(advanceTick, TICK_INTERVAL);
-console.log(`[Server] Game tick cycle started (every ${TICK_INTERVAL / 60000} minutes)`);
+scheduleNextTick();
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
