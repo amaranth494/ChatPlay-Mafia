@@ -29,8 +29,12 @@ $status = git status --porcelain
 if ($status) {
     git commit -m "Deploy: $(Get-Date -Format 'yyyy-MM-dd HH:mm')"
 }
-git push origin production --force
+
+$commitHash = git rev-parse HEAD
+$shortHash = $commitHash.Substring(0, 7)
+git push origin HEAD:production --force
 
 Write-Host ""
 Write-Host "Deployment complete!" -ForegroundColor Green
+Write-Host "Commit pushed: $shortHash" -ForegroundColor Cyan
 Write-Host "Railway will deploy automatically from GitHub."
