@@ -27,7 +27,12 @@ Write-Host "Committing and pushing to GitHub production..." -ForegroundColor Yel
 git add -A
 $status = git status --porcelain
 if ($status) {
-    git commit -m "Deploy: $(Get-Date -Format 'yyyy-MM-dd HH:mm')"
+    Write-Host ""
+    $commitMsg = Read-Host "Enter commit description"
+    if ([string]::IsNullOrWhiteSpace($commitMsg)) {
+        $commitMsg = "Deploy: $(Get-Date -Format 'yyyy-MM-dd HH:mm')"
+    }
+    git commit -m "$commitMsg"
 }
 
 $commitHash = git rev-parse HEAD
