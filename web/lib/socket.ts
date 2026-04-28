@@ -48,6 +48,7 @@ export type ServerEvent =
   | { type: 'npc_message'; data: NpcMessage }
   | { type: 'thread_history'; data: ThreadHistory }
   | { type: 'game_state'; data: GameState }
+  | { type: 'game_tick'; data: GameState }
   | { type: 'thread_update'; data: Thread[] }
   | { type: 'error'; data: { message: string } };
 
@@ -98,6 +99,12 @@ class ChatPlayClient {
           if (gs.label) {
             console.log(`[CURRENT GAME TIME] ${gs.label}`);
           }
+        }
+        
+        if (event.type === 'game_tick') {
+          const tick = event.data as unknown as Record<string, unknown>;
+          const time = new Date().toISOString().replace('T', ' ').substring(0, 19);
+          console.log(`[TICK] [${time}] Tick=${tick.totalTicks} ${tick.label}`);
         }
         
         const handlers = this.handlers.get(event.type);
