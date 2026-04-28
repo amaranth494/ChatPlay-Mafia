@@ -55,7 +55,8 @@ export type ClientEvent =
   | { type: 'send_message'; data: PlayerMessage }
   | { type: 'join_game'; playerId?: string }
   | { type: 'select_npc'; data: { npcId: string } }
-  | { type: 'mark_read'; data: { threadId: string } };
+  | { type: 'mark_read'; data: { threadId: string } }
+  | { type: 'reset_game' };
 
 class ChatPlayClient {
   private socket: Socket | null = null;

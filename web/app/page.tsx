@@ -156,6 +156,7 @@ export default function Home() {
       await client.connect();
       setConnected(true);
       client.joinGame(user?.id.toString() || 'anonymous');
+      client.send({ type: 'reset_game' });
     } catch (error) {
       console.error('Failed to connect:', error);
     }
