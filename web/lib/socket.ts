@@ -98,6 +98,16 @@ class ChatPlayClient {
           const gs = event.data as unknown as Record<string, unknown>;
           if (gs.label) {
             console.log(`[CURRENT GAME TIME] ${gs.label}`);
+            
+            const now = new Date();
+            const minutes = now.getUTCMinutes();
+            const seconds = now.getUTCSeconds();
+            const ms = now.getUTCMilliseconds();
+            const minutesUntilNext = (30 - (minutes % 30)) % 30;
+            let secondsUntilNext = minutesUntilNext * 60 - (seconds + ms / 1000);
+            if (secondsUntilNext <= 0) secondsUntilNext += 30 * 60;
+            const minsUntil = Math.floor(secondsUntilNext / 60);
+            console.log(`[NEXT TICK] The next tick will be in ${minsUntil} minutes`);
           }
         }
         
