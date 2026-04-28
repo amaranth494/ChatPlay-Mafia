@@ -3,7 +3,7 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import dotenv from 'dotenv';
 
-// v2.1 - threads from database only
+// v2.2 - tick system with totalTicks
 dotenv.config();
 
 const app = express();
