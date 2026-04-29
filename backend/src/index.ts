@@ -87,10 +87,6 @@ function resetGameTick() {
   saveGameState();
 }
 
-function getTotalTicks() {
-  return (gameState.dayNumber - 1) * 2 + (gameState.isDay ? 0 : 1);
-}
-
 function advanceTick() {
   if (gameState.isDay) {
     gameState.isDay = false;
