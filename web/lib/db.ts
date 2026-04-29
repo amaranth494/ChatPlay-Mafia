@@ -198,6 +198,18 @@ export async function initDatabase(): Promise<void> {
       );
     `);
     
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS game_state (
+        id SERIAL PRIMARY KEY,
+        game_id VARCHAR(100) UNIQUE NOT NULL,
+        day_number INTEGER DEFAULT 1,
+        is_day BOOLEAN DEFAULT TRUE,
+        total_ticks INTEGER DEFAULT 0,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+    
     console.log('[DB] Tables created successfully');
     
     // Run migrations
@@ -828,6 +840,89 @@ export async function deleteUser(email: string): Promise<void> {
     await client.query('DELETE FROM users WHERE email = $1', [email]);
 
     console.log(`[DB] Deleted user and all data for: ${email}`);
+  } finally {
+    client.release();
+  }
+}
+
+export interface GameStateRow {
+  id: number;
+  game_id: string;
+  day_number: number;
+  is_day: boolean;
+  total_ticks: number;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export async function getGameState(gameId: string = 'default'): Promise<GameStateRow | null> {
+  const client = await pool.connect();
+  try {
+    const result = await client.query(
+      'SELECT * FROM game_state WHERE game_id = $1',
+      [gameId]
+    );
+    if (result.rows.length === 0) return null;
+    return {
+      id: result.rows[0].id,
+      game_id: result.rows[0].game_id,
+      day_number: result.rows[0].day_number,
+      is_day: result.rows[0].is_day,
+      total_ticks: result.rows[0].total_ticks,
+      created_at: result.rows[0].created_at,
+      updated_at: result.rows[0].updated_at
+    };
+  } finally {
+    client.release();
+  }
+}
+
+export async function createGameState(gameId: string = 'default'): Promise<GameStateRow> {
+  const client = await pool.connect();
+  try {
+    const result = await client.query(
+      'INSERT INTO game_state (game_id, day_number, is_day, total_ticks) VALUES ($1, 1, TRUE, 0) RETURNING *',
+      [gameId]
+    );
+    return {
+      id: result.rows[0].id,
+      game_id: result.rows[0].game_id,
+      day_number: result.rows[0].day_number,
+      is_day: result.rows[0].is_day,
+      total_ticks: result.rows[0].total_ticks,
+      created_at: result.rows[0].created_at,
+      updated_at: result.rows[0].updated_at
+    };
+  } finally {
+    client.release();
+  }
+}
+
+export async function updateGameState(
+  gameId: string,
+  dayNumber: number,
+  isDay: boolean,
+  totalTicks: number
+): Promise<void> {
+  const client = await pool.connect();
+  try {
+    await client.query(
+      'UPDATE game_state SET day_number = $2, is_day = $3, total_ticks = $4, updated_at = NOW() WHERE game_id = $1',
+      [gameId, dayNumber, isDay, totalTicks]
+    );
+  } finally {
+    client.release();
+  }
+}
+
+export async function resetGameState(gameId: string = 'default'): Promise<void> {
+  const client = await pool.connect();
+  try {
+    await client.query(
+      'UPDATE game_state SET day_number = 1, is_day = TRUE, total_ticks = 0, updated_at = NOW() WHERE game_id = $1',
+      [gameId]
+    );
+    console.log(`[DB] Game state reset for: ${gameId}`);
   } finally {
     client.release();
   }

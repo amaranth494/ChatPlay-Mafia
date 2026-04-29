@@ -2,8 +2,9 @@ import express from 'express';
 import { createServer } from 'http';
 import { Server } from 'socket.io';
 import dotenv from 'dotenv';
+import { Pool } from 'pg';
 
-// v2.2 - tick system with totalTicks
+// v2.3 - tick system with database storage
 dotenv.config();
 
 const app = express();
@@ -20,6 +21,8 @@ const io = new Server(httpServer, {
   path: WS_PATH
 });
 
+const pool = process.env.DATABASE_URL ? new Pool({ connectionString: process.env.DATABASE_URL }) : null;
+
 interface ConnectedClient {
   playerId: string;
   familyId: string;
@@ -32,14 +35,56 @@ interface GameState {
   isDay: boolean;
 }
 
-const gameState: GameState = {
-  dayNumber: 1,
-  isDay: true
-};
+let gameState: GameState = { dayNumber: 1, isDay: true };
+
+async function loadGameState() {
+  if (!pool) {
+    console.log('[DB] No DATABASE_URL - using in-memory game state');
+    return;
+  }
+  
+  try {
+    const result = await pool.query('SELECT * FROM game_state WHERE game_id = $1', ['default']);
+    if (result.rows.length > 0) {
+      gameState.dayNumber = result.rows[0].day_number;
+      gameState.isDay = result.rows[0].is_day;
+      console.log(`[DB] Loaded game state: Day ${gameState.dayNumber}, isDay ${gameState.isDay}`);
+    } else {
+      await pool.query(
+        'INSERT INTO game_state (game_id, day_number, is_day, total_ticks) VALUES ($1, 1, TRUE, 0)',
+        ['default']
+      );
+      console.log('[DB] Created default game state');
+    }
+  } catch (err) {
+    console.error('[DB] Error loading game state:', err);
+  }
+}
+
+async function saveGameState() {
+  if (!pool) return;
+  
+  try {
+    const totalTicks = getTotalTicks();
+    await pool.query(
+      'UPDATE game_state SET day_number = $2, is_day = $3, total_ticks = $4, updated_at = NOW() WHERE game_id = $1',
+      ['default', gameState.dayNumber, gameState.isDay, totalTicks]
+    );
+  } catch (err) {
+    console.error('[DB] Error saving game state:', err);
+  }
+}
+
+function getTotalTicks() {
+  return (gameState.dayNumber - 1) * 2 + (gameState.isDay ? 0 : 1);
+}
+
+loadGameState();
 
 function resetGameTick() {
   gameState.dayNumber = 1;
   gameState.isDay = true;
+  saveGameState();
 }
 
 function getTotalTicks() {
@@ -54,13 +99,15 @@ function advanceTick() {
     gameState.dayNumber++;
   }
   
-  const totalTicks = (gameState.dayNumber - 1) * 2 + (gameState.isDay ? 0 : 1);
+  const totalTicks = getTotalTicks();
   
   const now = new Date();
   const timeStr = now.toISOString().replace('T', ' ').substring(0, 19);
   const label = gameState.isDay ? `Day ${gameState.dayNumber}` : `Night ${gameState.dayNumber}`;
   
   console.log(`[TICK] [${timeStr}] Tick=${totalTicks} ${label}`);
+  
+  saveGameState();
   
   io.emit('message', {
     type: 'game_tick',
