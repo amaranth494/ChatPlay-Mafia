@@ -187,10 +187,28 @@ export async function initDatabase(): Promise<void> {
     `);
     
     await client.query(`
+      CREATE TABLE IF NOT EXISTS npc_templates (
+        id SERIAL PRIMARY KEY,
+        npc_id VARCHAR(100) UNIQUE NOT NULL,
+        role VARCHAR(50) NOT NULL,
+        name VARCHAR(100) NOT NULL,
+        personality TEXT,
+        backstory TEXT,
+        speech_pattern TEXT,
+        loyalty_level INTEGER DEFAULT 50,
+        influence_level INTEGER DEFAULT 50,
+        danger_level INTEGER DEFAULT 50,
+        is_active BOOLEAN DEFAULT TRUE,
+        created_at TIMESTAMP DEFAULT NOW(),
+        updated_at TIMESTAMP DEFAULT NOW()
+      );
+    `);
+    
+    await client.query(`
       CREATE TABLE IF NOT EXISTS npcs (
         id SERIAL PRIMARY KEY,
         user_id INTEGER REFERENCES users(id),
-        npc_id VARCHAR(100) UNIQUE NOT NULL,
+        npc_id VARCHAR(100) NOT NULL,
         name VARCHAR(100) NOT NULL,
         role VARCHAR(50) NOT NULL,
         personality TEXT,
@@ -923,6 +941,168 @@ export async function resetGameState(gameId: string = 'default'): Promise<void> 
       [gameId]
     );
     console.log(`[DB] Game state reset for: ${gameId}`);
+  } finally {
+    client.release();
+  }
+}
+
+export interface NpcTemplate {
+  id: number;
+  npc_id: string;
+  role: string;
+  name: string;
+  personality: string | null;
+  backstory: string | null;
+  speech_pattern: string | null;
+  loyalty_level: number;
+  influence_level: number;
+  danger_level: number;
+  is_active: boolean;
+  created_at: Date;
+  updated_at: Date;
+}
+
+export async function getNpcTemplates(): Promise<NpcTemplate[]> {
+  const client = await pool.connect();
+  try {
+    const result = await client.query(
+      'SELECT * FROM npc_templates WHERE is_active = TRUE ORDER BY role, name'
+    );
+    return result.rows;
+  } finally {
+    client.release();
+  }
+}
+
+export async function getNpcTemplate(npcId: string): Promise<NpcTemplate | null> {
+  const client = await pool.connect();
+  try {
+    const result = await client.query(
+      'SELECT * FROM npc_templates WHERE npc_id = $1 AND is_active = TRUE',
+      [npcId]
+    );
+    if (result.rows.length === 0) return null;
+    return result.rows[0];
+  } finally {
+    client.release();
+  }
+}
+
+export async function createNpcTemplate(
+  npcId: string,
+  role: string,
+  name: string,
+  personality?: string,
+  backstory?: string,
+  speechPattern?: string,
+  loyaltyLevel?: number,
+  influenceLevel?: number,
+  dangerLevel?: number
+): Promise<NpcTemplate> {
+  const client = await pool.connect();
+  try {
+    const result = await client.query(
+      `INSERT INTO npc_templates (npc_id, role, name, personality, backstory, speech_pattern, loyalty_level, influence_level, danger_level)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9) RETURNING *`,
+      [npcId, role, name, personality || null, backstory || null, speechPattern || null, loyaltyLevel || 50, influenceLevel || 50, dangerLevel || 50]
+    );
+    console.log(`[DB] Created NPC template: ${name} (${role})`);
+    return result.rows[0];
+  } finally {
+    client.release();
+  }
+}
+
+export async function updateNpcTemplate(
+  npcId: string,
+  updates: Partial<{
+    name: string;
+    personality: string;
+    backstory: string;
+    speech_pattern: string;
+    loyalty_level: number;
+    influence_level: number;
+    danger_level: number;
+    is_active: boolean;
+  }>
+): Promise<void> {
+  const client = await pool.connect();
+  try {
+    const setClauses: string[] = [];
+    const values: unknown[] = [];
+    let paramIndex = 1;
+    
+    if (updates.name !== undefined) {
+      setClauses.push(`name = $${paramIndex++}`);
+      values.push(updates.name);
+    }
+    if (updates.personality !== undefined) {
+      setClauses.push(`personality = $${paramIndex++}`);
+      values.push(updates.personality);
+    }
+    if (updates.backstory !== undefined) {
+      setClauses.push(`backstory = $${paramIndex++}`);
+      values.push(updates.backstory);
+    }
+    if (updates.speech_pattern !== undefined) {
+      setClauses.push(`speech_pattern = $${paramIndex++}`);
+      values.push(updates.speech_pattern);
+    }
+    if (updates.loyalty_level !== undefined) {
+      setClauses.push(`loyalty_level = $${paramIndex++}`);
+      values.push(updates.loyalty_level);
+    }
+    if (updates.influence_level !== undefined) {
+      setClauses.push(`influence_level = $${paramIndex++}`);
+      values.push(updates.influence_level);
+    }
+    if (updates.danger_level !== undefined) {
+      setClauses.push(`danger_level = $${paramIndex++}`);
+      values.push(updates.danger_level);
+    }
+    if (updates.is_active !== undefined) {
+      setClauses.push(`is_active = $${paramIndex++}`);
+      values.push(updates.is_active);
+    }
+    
+    if (setClauses.length === 0) return;
+    
+    setClauses.push(`updated_at = NOW()`);
+    values.push(npcId);
+    
+    await client.query(
+      `UPDATE npc_templates SET ${setClauses.join(', ')} WHERE npc_id = $${paramIndex}`,
+      values
+    );
+    console.log(`[DB] Updated NPC template: ${npcId}`);
+  } finally {
+    client.release();
+  }
+}
+
+export async function seedDefaultNpcTemplates(): Promise<void> {
+  const client = await pool.connect();
+  try {
+    const existing = await client.query('SELECT COUNT(*) FROM npc_templates');
+    if (parseInt(existing.rows[0].count) > 0) {
+      console.log('[DB] NPC templates already exist, skipping seed');
+      return;
+    }
+    
+    const templates = [
+      { npcId: 'consiglieri', role: 'Consigliere', name: 'Salvatore "The Advisor"', personality: 'Wise and calculating. Speaks only when necessary, always thinking three moves ahead.', backstory: 'Former lawyer who became the family\'s most trusted advisor after saving the Boss from a rival ambush.', speechPattern: 'Measured, formal, uses short sentences.' },
+      { npcId: 'lieutenant', role: 'Lieutenant', name: 'Luca "The Blade"', personality: 'Violent and unpredictable. Short-tempered but fiercely loyal.', backstory: 'Former boxer who worked his way up through the ranks using his fists.', speechPattern: 'Blunt, aggressive, minimal words.' },
+      { npcId: 'soldier', role: 'Soldier', name: 'Marco', personality: 'Nervous and eager to please. New to the family but ambitious.', backstory: 'Young recruit from the old neighborhood, looking for a way up.', speechPattern: 'Formal, overly respectful, often nervous.' }
+    ];
+    
+    for (const t of templates) {
+      await client.query(
+        `INSERT INTO npc_templates (npc_id, role, name, personality, backstory, speech_pattern) VALUES ($1, $2, $3, $4, $5, $6)`,
+        [t.npcId, t.role, t.name, t.personality, t.backstory, t.speechPattern]
+      );
+    }
+    
+    console.log('[DB] Seeded 3 default NPC templates');
   } finally {
     client.release();
   }
