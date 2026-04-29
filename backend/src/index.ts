@@ -28,26 +28,25 @@ interface ConnectedClient {
 const clients = new Map<string, ConnectedClient>();
 
 interface GameState {
-  totalTicks: number;
   dayNumber: number;
   isDay: boolean;
 }
 
 const gameState: GameState = {
-  totalTicks: 0,
   dayNumber: 1,
   isDay: true
 };
 
 function resetGameTick() {
-  gameState.totalTicks = 0;
   gameState.dayNumber = 1;
   gameState.isDay = true;
 }
 
+function getTotalTicks() {
+  return (gameState.dayNumber - 1) * 2 + (gameState.isDay ? 0 : 1);
+}
+
 function advanceTick() {
-  gameState.totalTicks++;
-  
   if (gameState.isDay) {
     gameState.isDay = false;
   } else {
@@ -55,16 +54,18 @@ function advanceTick() {
     gameState.dayNumber++;
   }
   
+  const totalTicks = (gameState.dayNumber - 1) * 2 + (gameState.isDay ? 0 : 1);
+  
   const now = new Date();
   const timeStr = now.toISOString().replace('T', ' ').substring(0, 19);
   const label = gameState.isDay ? `Day ${gameState.dayNumber}` : `Night ${gameState.dayNumber}`;
   
-  console.log(`[TICK] [${timeStr}] Tick=${gameState.totalTicks} ${label}`);
+  console.log(`[TICK] [${timeStr}] Tick=${totalTicks} ${label}`);
   
   io.emit('message', {
     type: 'game_tick',
     data: {
-      totalTicks: gameState.totalTicks,
+      totalTicks,
       dayNumber: gameState.dayNumber,
       isDay: gameState.isDay,
       label: label
@@ -109,13 +110,13 @@ io.on('connection', (socket) => {
         socket.emit('message', {
           type: 'game_state',
           data: {
-            totalTicks: gameState.totalTicks,
+            totalTicks: getTotalTicks(),
             dayNumber: gameState.dayNumber,
             isDay: gameState.isDay,
             label: gameState.isDay ? `Day ${gameState.dayNumber}` : `Night ${gameState.dayNumber}`
           }
         });
-        console.log(`[CURRENT GAME TIME] ${gameState.isDay ? 'Day' : 'Night'} ${gameState.dayNumber} (Tick=${gameState.totalTicks})`);
+        console.log(`[CURRENT GAME TIME] ${gameState.isDay ? 'Day' : 'Night'} ${gameState.dayNumber} (Tick=${getTotalTicks()})`);
         break;
 
       case 'send_message':
@@ -148,7 +149,7 @@ io.on('connection', (socket) => {
         socket.emit('message', {
           type: 'game_state',
           data: {
-            totalTicks: gameState.totalTicks,
+            totalTicks: getTotalTicks(),
             dayNumber: gameState.dayNumber,
             isDay: gameState.isDay,
             label: gameState.isDay ? `Day ${gameState.dayNumber}` : `Night ${gameState.dayNumber}`
