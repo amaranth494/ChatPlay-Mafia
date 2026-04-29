@@ -1,5 +1,13 @@
 const { Pool } = require('pg');
 const fs = require('fs');
+const path = require('path');
+
+const REPORTS_DIR = path.join(__dirname, '..', 'reports');
+
+// Ensure reports directory exists
+if (!fs.existsSync(REPORTS_DIR)) {
+  fs.mkdirSync(REPORTS_DIR, { recursive: true });
+}
 
 const pool = new Pool({
   connectionString: 'postgresql://postgres:mbADBQGytUrPGavlQGvmqfkguJVGSohT@shortline.proxy.rlwy.net:47702/railway',
@@ -50,7 +58,7 @@ async function exportNPCData() {
   ].map(v => `"${v}"`).join(','));
   
   const templateCsv = [templateHeaders.join(','), ...templateRows].join('\n');
-  fs.writeFileSync(`npc_templates_${timestamp}.csv`, templateCsv);
+  fs.writeFileSync(path.join(REPORTS_DIR, `npc_templates_${timestamp}.csv`), templateCsv);
   console.log(`[OK] Exported npc_templates (${templates.rows.length} rows)`);
   
   // Export traits to CSV
@@ -65,7 +73,7 @@ async function exportNPCData() {
   ].map(v => `"${v}"`).join(','));
   
   const traitCsv = [traitHeaders.join(','), ...traitRows].join('\n');
-  fs.writeFileSync(`npc_traits_${timestamp}.csv`, traitCsv);
+  fs.writeFileSync(path.join(REPORTS_DIR, `npc_traits_${timestamp}.csv`), traitCsv);
   console.log(`[OK] Exported npc_traits (${traits.rows.length} rows)`);
   
   // Export memories to CSV
@@ -81,10 +89,10 @@ async function exportNPCData() {
   ].map(v => `"${v}"`).join(','));
   
   const memoryCsv = [memoryHeaders.join(','), ...memoryRows].join('\n');
-  fs.writeFileSync(`npc_memories_${timestamp}.csv`, memoryCsv);
+  fs.writeFileSync(path.join(REPORTS_DIR, `npc_memories_${timestamp}.csv`), memoryCsv);
   console.log(`[OK] Exported npc_memories (${memories.rows.length} rows)`);
   
-  console.log(`\n=== Files Created ===`);
+  console.log(`\n=== Files Created in reports/ ===`);
   console.log(`npc_templates_${timestamp}.csv`);
   console.log(`npc_traits_${timestamp}.csv`);
   console.log(`npc_memories_${timestamp}.csv`);
