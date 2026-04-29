@@ -35,10 +35,11 @@ export interface Thread {
 }
 
 export interface GameState {
-  familyId: string;
-  familyName: string;
-  money: number;
-  territories: string[];
+  familyId?: string;
+  familyName?: string;
+  money?: number;
+  territories?: string[];
+  totalTicks?: number;
   dayNumber?: number;
   isDay?: boolean;
   label?: string;
@@ -112,9 +113,9 @@ class ChatPlayClient {
         }
         
         if (event.type === 'game_tick') {
-          const tick = event.data as unknown as { totalTicks: number; label: string };
+          const tick = event.data as { totalTicks: number; dayNumber: number; isDay: boolean; label: string };
           const time = new Date().toISOString().replace('T', ' ').substring(0, 19);
-          console.log(`[TICK] [${time}] Tick=${tick?.totalTicks ?? '?'} ${tick?.label ?? ''}`);
+          console.log(`[TICK] [${time}] Tick=${tick.totalTicks} ${tick.label}`);
         }
         
         const handlers = this.handlers.get(event.type);
