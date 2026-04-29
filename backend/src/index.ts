@@ -3,8 +3,9 @@ import { createServer } from 'http';
 import { Server } from 'socket.io';
 import dotenv from 'dotenv';
 import { Pool } from 'pg';
+import { getNpcLLMContext, recordPlayerInteraction, decayNpcTraits, processMemoryCausation, testConnection } from './db';
 
-// v2.3 - tick system with database storage
+// v2.4 - NPC social simulation
 dotenv.config();
 
 const app = express();
@@ -103,6 +104,14 @@ function advanceTick() {
   
   console.log(`[TICK] [${timeStr}] Tick=${totalTicks} ${label}`);
   
+  // Process NPC social simulation tick
+  decayNpcTraits(1).then(decayed => {
+    if (decayed > 0) console.log(`[Tick] Decayed ${decayed} NPC traits`);
+  });
+  processMemoryCausation().then(caused => {
+    if (caused > 0) console.log(`[Tick] Processed ${caused} memory causations`);
+  });
+  
   saveGameState();
   
   io.emit('message', {
@@ -162,22 +171,41 @@ io.on('connection', (socket) => {
         console.log(`[CURRENT GAME TIME] ${gameState.isDay ? 'Day' : 'Night'} ${gameState.dayNumber} (Tick=${getTotalTicks()})`);
         break;
 
-      case 'send_message':
+case 'send_message':
         // Forward to AI for response
         const client = clients.get(socket.id);
         if (client && event.data && typeof event.data === 'object' && 'content' in event.data) {
           const content = (event.data as { content: string }).content;
+          const npcId = (event.data as { npcId?: string }).npcId || 'consigliere';
+          const playerId = client.playerId;
           
-// Simulate AI response (replace with real AI call later)
-          setTimeout(() => {
+          // Record player interaction for NPC social simulation
+          if (playerId) {
+            recordPlayerInteraction(npcId, playerId, content).catch(() => {});
+          }
+          
+          // Get NPC context
+          getNpcLLMContext(npcId).then(npcContext => {
+            let response = `I understand. "${content.substring(0, 20)}${content.length > 20 ? '...' : ''}"`;
+            if (npcContext) {
+              response = npcContext.split('.')[0] + '. ' + response;
+            }
             socket.emit('message', {
               type: 'npc_message',
               data: {
-                content: `I understand. "${content.substring(0, 30)}${content.length > 30 ? '...' : ''}" - The family is listening.`,
+                content: response + ' - The family is listening.',
                 timestamp: new Date().toISOString()
               }
             });
-          }, 1500);
+          }).catch(() => {
+            socket.emit('message', {
+              type: 'npc_message',
+              data: {
+                content: `I understand. "${content.substring(0, 20)}${content.length > 20 ? '...' : ''}" - The family is listening.`,
+                timestamp: new Date().toISOString()
+              }
+            });
+          });
         }
         break;
 

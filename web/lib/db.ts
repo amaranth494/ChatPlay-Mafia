@@ -205,6 +205,33 @@ export async function initDatabase(): Promise<void> {
     `);
     
     await client.query(`
+      CREATE TABLE IF NOT EXISTS npc_traits (
+        id SERIAL PRIMARY KEY,
+        npc_id VARCHAR(100) NOT NULL,
+        target_id VARCHAR(100) NOT NULL,
+        target_type VARCHAR(20) NOT NULL,
+        trait_type VARCHAR(50) NOT NULL,
+        value INTEGER DEFAULT 50,
+        last_modified TIMESTAMP DEFAULT NOW(),
+        created_at TIMESTAMP DEFAULT NOW(),
+        UNIQUE(npc_id, target_id, trait_type)
+      );
+    `);
+    
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS npc_memories (
+        id SERIAL PRIMARY KEY,
+        npc_id VARCHAR(100) NOT NULL,
+        event_type VARCHAR(50) NOT NULL,
+        description TEXT NOT NULL,
+        emotional_impact INTEGER DEFAULT 50,
+        source_id VARCHAR(100),
+        created_at TIMESTAMP DEFAULT NOW(),
+        expires_at TIMESTAMP
+      );
+    `);
+    
+    await client.query(`
       CREATE TABLE IF NOT EXISTS npcs (
         id SERIAL PRIMARY KEY,
         user_id INTEGER REFERENCES users(id),
@@ -1109,3 +1136,217 @@ export async function seedDefaultNpcTemplates(): Promise<void> {
 }
 
 export { pool };
+
+// ============ NPC Social Simulation ============
+
+// NPC Traits table - tracks emotional relationships between NPCs and targets
+export async function createNpcTraitsTable(): Promise<void> {
+  const client = await pool.connect();
+  try {
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS npc_traits (
+        id SERIAL PRIMARY KEY,
+        npc_id VARCHAR(100) NOT NULL,
+        target_id VARCHAR(100) NOT NULL,
+        target_type VARCHAR(20) NOT NULL,
+        trait_type VARCHAR(50) NOT NULL,
+        value INTEGER DEFAULT 50,
+        last_modified TIMESTAMP DEFAULT NOW(),
+        created_at TIMESTAMP DEFAULT NOW(),
+        UNIQUE(npc_id, target_id, trait_type)
+      );
+    `);
+    console.log('[DB] npc_traits table ready');
+  } finally {
+    client.release();
+  }
+}
+
+// NPC Memories table - stores event-based memories with emotional context
+export async function createNpcMemoriesTable(): Promise<void> {
+  const client = await pool.connect();
+  try {
+    await client.query(`
+      CREATE TABLE IF NOT EXISTS npc_memories (
+        id SERIAL PRIMARY KEY,
+        npc_id VARCHAR(100) NOT NULL,
+        event_type VARCHAR(50) NOT NULL,
+        description TEXT NOT NULL,
+        emotional_impact INTEGER DEFAULT 50,
+        source_id VARCHAR(100),
+        created_at TIMESTAMP DEFAULT NOW(),
+        expires_at TIMESTAMP
+      );
+    `);
+    console.log('[DB] npc_memories table ready');
+  } finally {
+    client.release();
+  }
+}
+
+// Set NPC trait value (create or update)
+export async function setNpcTrait(
+  npcId: string,
+  targetId: string,
+  targetType: string,
+  traitType: string,
+  value: number
+): Promise<void> {
+  const client = await pool.connect();
+  try {
+    await client.query(`
+      INSERT INTO npc_traits (npc_id, target_id, target_type, trait_type, value, last_modified)
+      VALUES ($1, $2, $3, $4, $5, NOW())
+      ON CONFLICT (npc_id, target_id, trait_type)
+      DO UPDATE SET value = $5, last_modified = NOW()
+    `, [npcId, targetId, targetType, traitType, Math.max(-100, Math.min(100, value))]);
+  } finally {
+    client.release();
+  }
+}
+
+// Get all traits for an NPC
+export async function getNpcTraits(npcId: string): Promise<Array<{
+  targetId: string;
+  targetType: string;
+  traitType: string;
+  value: number;
+}>> {
+  const client = await pool.connect();
+  try {
+    const result = await client.query(`
+      SELECT target_id as "targetId", target_type as "targetType", trait_type as "traitType", value
+      FROM npc_traits WHERE npc_id = $1
+    `, [npcId]);
+    return result.rows;
+  } finally {
+    client.release();
+  }
+}
+
+// Add NPC memory
+export async function addNpcMemory(
+  npcId: string,
+  eventType: string,
+  description: string,
+  emotionalImpact: number,
+  sourceId?: string,
+  expiresInDays?: number
+): Promise<void> {
+  const client = await pool.connect();
+  try {
+    const expiresAt = expiresInDays 
+      ? new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000)
+      : null;
+    await client.query(`
+      INSERT INTO npc_memories (npc_id, event_type, description, emotional_impact, source_id, expires_at)
+      VALUES ($1, $2, $3, $4, $5, $6)
+    `, [npcId, eventType, description, Math.max(-100, Math.min(100, emotionalImpact)), sourceId, expiresAt]);
+  } finally {
+    client.release();
+  }
+}
+
+// Get active memories for NPC
+export async function getNpcMemories(npcId: string): Promise<Array<{
+  eventType: string;
+  description: string;
+  emotionalImpact: number;
+  sourceId: string | null;
+}>> {
+  const client = await pool.connect();
+  try {
+    const result = await client.query(`
+      SELECT event_type as "eventType", description, emotional_impact as "emotionalImpact", source_id as "sourceId"
+      FROM npc_memories 
+      WHERE npc_id = $1 AND (expires_at IS NULL OR expires_at > NOW())
+      ORDER BY created_at DESC
+      LIMIT 10
+    `, [npcId]);
+    return result.rows;
+  } finally {
+    client.release();
+  }
+}
+
+// Decay all NPC traits (called every game tick)
+export async function decayNpcTraits(decayRate: number = 1): Promise<number> {
+  const client = await pool.connect();
+  try {
+    const result = await client.query(`
+      UPDATE npc_traits 
+      SET value = GREATEST(-100, LEAST(100, value - $1)),
+          last_modified = NOW()
+      WHERE value != 0
+      RETURNING id
+    `, [decayRate]);
+    return result.rowCount ?? 0;
+  } finally {
+    client.release();
+  }
+}
+
+// Process memory-to-trait causation
+export async function processMemoryCausation(): Promise<number> {
+  const client = await pool.connect();
+  try {
+    const memories = await client.query(`
+      SELECT npc_id, event_type, emotional_impact, source_id
+      FROM npc_memories
+      WHERE created_at < NOW() - INTERVAL '24 hours'
+      AND expires_at IS NULL
+      LIMIT 100
+    `);
+    let processed = 0;
+    for (const m of memories.rows) {
+      if (m.source_id && Math.abs(m.emotional_impact) > 30) {
+        const traitMap: Record<string, string> = {
+          'betrayal': 'loyalty', 'help': 'trust', 'threat': 'fear',
+          'gift': 'trust', 'insult': 'respect', 'protection': 'loyalty'
+        };
+        const traitType = traitMap[m.event_type] || 'trust';
+        const valueChange = m.emotional_impact > 0 ? -m.emotional_impact : Math.abs(m.emotional_impact);
+        await setNpcTrait(m.npc_id, m.source_id, 'npc', traitType, valueChange);
+        processed++;
+      }
+    }
+    return processed;
+  } finally {
+    client.release();
+  }
+}
+
+// Calculate NPC emotional state from traits and memories
+export async function calculateEmotionalState(npcId: string): Promise<{
+  emotion: string;
+  intensity: number;
+  context: string;
+}> {
+  const traits = await getNpcTraits(npcId);
+  const memories = await getNpcMemories(npcId);
+  
+  let trust = 0, fear = 0, anger = 0, loyalty = 0;
+  for (const t of traits) {
+    if (t.traitType === 'trust') trust += t.value;
+    else if (t.traitType === 'fear') fear += t.value;
+    else if (t.traitType === 'anger') anger += t.value;
+    else if (t.traitType === 'loyalty') loyalty += t.value;
+  }
+  
+  const recentImpact = memories.slice(0, 5).reduce((sum, m) => sum + m.emotionalImpact, 0);
+  
+  const emotions = [
+    { name: 'wary', score: Math.abs(fear) + Math.abs(trust) / 2 },
+    { name: 'hostile', score: anger + Math.abs(recentImpact) },
+    { name: 'loyal', score: loyalty },
+    { name: 'trusting', score: trust },
+    { name: 'paranoid', score: fear }
+  ].sort((a, b) => b.score - a.score)[0];
+  
+  const intensity = Math.min(100, Math.abs(emotions.score) + Math.abs(recentImpact) / 10);
+  let context = `They seem ${emotions.name}.`;
+  if (recentImpact > 20) context = `Recently troubled. ${context}`;
+  else if (recentImpact < -20) context = `Feeling grateful. ${context}`;
+  
+  return { emotion: emotions.name, intensity: Math.round(intensity), context };
+}
