@@ -1,0 +1,4 @@
+npc_id,role,name,personality,backstory,speech_pattern,loyalty_level,influence_level,danger_level,is_active,created_at
+"capo","Capo","Luca "The Blade"","Violent but loyal. Short-tempered.","Rose through the ranks as an enforcer.","Blunt, aggressive.","60","50","90","true","Wed Apr 29 2026 23:22:05 GMT-0700 (Pacific Daylight Time)"
+"consigliere","Consigliere","Salvatore "The Advisor"","Wise and calculating. Speaks only when necessary.","Former lawyer who saved the Boss from an ambush.","Measured, formal sentences.","70","80","30","true","Wed Apr 29 2026 23:22:05 GMT-0700 (Pacific Daylight Time)"
+"soldier","Soldier","Marco","Nervous but ambitious.","New recruit from the old neighborhood.","Formal, overly respectful.","40","20","50","true","Wed Apr 29 2026 23:22:05 GMT-0700 (Pacific Daylight Time)"

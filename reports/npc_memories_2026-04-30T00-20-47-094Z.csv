@@ -1,0 +1,4 @@
+memory_uuid,npc_id,event_type,description,emotional_impact,source_id,trait_effects_json,created_at,expires_at
+"742ae3a9-f2b0-4cb9-b5d6-548c85b961a4","soldier","backstory","Marco is a nervous new recruit from the old neighborhood who wants to prove himself.","50","seed","[object Object]","Thu Apr 30 2026 00:19:55 GMT-0700 (Pacific Daylight Time)",""
+"e8cafa30-e311-4a8d-9920-7e46e814f588","capo","backstory","Luca rose through the ranks as an enforcer and is known for his violence and fierce loyalty.","50","seed","[object Object]","Thu Apr 30 2026 00:19:55 GMT-0700 (Pacific Daylight Time)",""
+"40b3b47b-dd93-40f6-9b8f-7c9f967c0196","consigliere","backstory","Salvatore once saved the Boss from an ambush and has served as advisor ever since.","80","seed","[object Object]","Thu Apr 30 2026 00:19:55 GMT-0700 (Pacific Daylight Time)",""

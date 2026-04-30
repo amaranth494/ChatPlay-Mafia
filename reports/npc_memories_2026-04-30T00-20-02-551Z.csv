@@ -1,0 +1,4 @@
+npc_id,event_type,description,emotional_impact,source_id,created_at,expires_at
+"soldier","backstory","Marco is a nervous new recruit from the old neighborhood who wants to prove himself.","50","seed","Thu Apr 30 2026 00:19:55 GMT-0700 (Pacific Daylight Time)",""
+"capo","backstory","Luca rose through the ranks as an enforcer and is known for his violence and fierce loyalty.","50","seed","Thu Apr 30 2026 00:19:55 GMT-0700 (Pacific Daylight Time)",""
+"consigliere","backstory","Salvatore once saved the Boss from an ambush and has served as advisor ever since.","80","seed","Thu Apr 30 2026 00:19:55 GMT-0700 (Pacific Daylight Time)",""
