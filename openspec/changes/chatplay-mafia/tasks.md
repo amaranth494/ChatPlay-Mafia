@@ -15,26 +15,26 @@
 
 ## 3. Mafia Simulation Engine
 
-- [ ] 3.1 Implement Family entity (money, territories, hierarchy)
-- [ ] 3.2 Implement NPC entity (role, health, relationships, personality)
-- [ ] 3.3 Implement Mission system (delegation, outcome calculation)
-- [ ] 3.4 Implement Relationship system (loyalty tracking, updates)
-- [ ] 3.5 Implement Phase system (day/night cycles, events)
+- [x] 3.1 Implement Family entity (money, territories, hierarchy)
+- [x] 3.2 Implement NPC entity (role, health, relationships, personality)
+- [x] 3.3 Implement Mission system (delegation, outcome calculation)
+- [x] 3.4 Implement Relationship system (loyalty tracking, updates)
+- [x] 3.5 Implement Phase system (day/night cycles, events)
 
 ## 4. Player Intent Parser
 
-- [ ] 4.1 Build command parser (/mission, /promote, /demote, etc.)
-- [ ] 4.2 Implement natural language intent classification
-- [ ] 4.3 Add validation layer for game actions
-- [ ] 4.4 Integrate with Consiglieri for clarification responses
+- [x] 4.1 Build command parser (/mission, /promote, /demote, etc.)
+- [x] 4.2 Implement natural language intent classification
+- [x] 4.3 Add validation layer for game actions
+- [x] 4.4 Integrate with Consiglieri for clarification responses
 
 ## 5. AI Dialogue Generation
 
-- [ ] 5.1 Set up OpenAI Responses API client
-- [ ] 5.2 Create NPC personality prompt templates
-- [ ] 5.3 Implement context injection (NPC state, recent events)
-- [ ] 5.4 Implement response rate limiting per NPC
-- [ ] 5.5 Add memory/context retrieval for conversation continuity
+- [x] 5.1 Set up OpenAI Responses API client
+- [x] 5.2 Create NPC personality prompt templates
+- [x] 5.3 Implement context injection (NPC state, recent events)
+- [x] 5.4 Implement response rate limiting per NPC
+- [x] 5.5 Add memory/context retrieval for conversation continuity
 
 ## 6. Moderation Layer
 
@@ -46,8 +46,8 @@
 ## 7. WebSocket Messaging
 
 - [x] 7.1 Implement WebSocket server for real-time messaging
-- [ ] 7.2 Set up message routing between client and simulation engine
-- [ ] 7.3 Implement message queue for NPC response timing
+- [x] 7.2 Set up message routing between client and simulation engine
+- [x] 7.3 Implement message queue for NPC response timing
 - [x] 7.4 Add connection handling (reconnect, auth)
 
 ## 8. Diegetic Messaging Client
@@ -55,23 +55,23 @@
 - [x] 8.1 Build thread list UI with unread indicators
 - [x] 8.2 Implement message display with timestamps
 - [x] 8.3 Create message composition interface
-- [ ] 8.4 Add command palette for "/" commands
-- [ ] 8.5 Implement archive section for dead NPCs
+- [x] 8.4 Add command palette for "/" commands
+- [x] 8.5 Implement archive section for dead NPCs
 
 ## 9. End-to-End Integration
 
-- [ ] 9.1 Connect client to backend via WebSocket
-- [ ] 9.2 Wire intent parser to simulation engine
-- [ ] 9.3 Wire simulation outcomes to AI dialogue generation
-- [ ] 9.4 Connect moderation layer to all input/output
-- [ ] 9.5 Test full game loop: message → parse → simulate → respond → display
+- [x] 9.1 Connect client to backend via WebSocket
+- [x] 9.2 Wire intent parser to simulation engine
+- [x] 9.3 Wire simulation outcomes to AI dialogue generation
+- [x] 9.4 Connect moderation layer to all input/output
+- [x] 9.5 Test full game loop: message → parse → simulate → respond → display
 
 ## 10. Initial Content
 
-- [ ] 10.1 Seed initial NPCs (Consiglieri, 3-4 soldiers, associates)
-- [ ] 10.2 Create initial family state (starting money, territory)
-- [ ] 10.3 Write initial Consiglieri greeting
-- [ ] 10.4 Define initial mission types and objectives
+- [x] 10.1 Seed initial NPCs (Consiglieri, 3-4 soldiers, associates)
+- [x] 10.2 Create initial family state (starting money, territory)
+- [x] 10.3 Write initial Consiglieri greeting
+- [x] 10.4 Define initial mission types and objectives
 
 ## 11. Deployment & Testing
 

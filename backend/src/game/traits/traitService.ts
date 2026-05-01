@@ -140,10 +140,10 @@ export async function removeTrait(input: { npcId: string; traitId: string; targe
       WHERE npc_id = $1 AND trait_id = $2 AND target_type = $3 AND (target_id = $4 OR (target_id IS NULL AND $4 IS NULL))
     `, [npcId, traitId, target.type, target.id || null]);
     
-    if (result.rowCount > 0) {
+    if ((result.rowCount ?? 0) > 0) {
       console.log(`[Trait] Removed ${traitId} from ${npcId}`);
     }
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   } finally {
     client.release();
   }
@@ -161,7 +161,7 @@ export async function hasTrait(input: { npcId: string; traitId: string; target: 
       WHERE npc_id = $1 AND trait_id = $2 AND target_type = $3 AND (target_id = $4 OR (target_id IS NULL AND $4 IS NULL))
     `, [npcId, traitId, target.type, target.id || null]);
     
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   } finally {
     client.release();
   }

@@ -173,6 +173,225 @@ export async function processMemoryCausation(): Promise<number> {
   }
 }
 
+export async function getFamily(familyId: string): Promise<{
+  id: string;
+  name: string;
+  money: number;
+  incomeRate: number;
+  territories: string[];
+} | null> {
+  if (!pool) return null;
+  const client = await pool.connect();
+  try {
+    const result = await client.query(`
+      SELECT id, name, money, income_rate as "incomeRate", territories
+      FROM families WHERE id = $1
+    `, [familyId]);
+    if (result.rows.length === 0) return null;
+    const row = result.rows[0];
+    return {
+      id: row.id,
+      name: row.name,
+      money: row.money,
+      incomeRate: row.incomeRate,
+      territories: row.territories || []
+    };
+  } finally {
+    client.release();
+  }
+}
+
+export async function updateFamilyMoney(familyId: string, newMoney: number): Promise<void> {
+}
+
+export async function addFamilyTerritory(familyId: string, territory: string): Promise<void> {
+  if (!pool) return;
+  const client = await pool.connect();
+  try {
+    await client.query(`
+      UPDATE families SET territories = array_append(territories, $2), updated_at = NOW() WHERE id = $1
+    `, [familyId, territory]);
+  } finally {
+    client.release();
+  }
+}
+
+export async function removeFamilyTerritory(familyId: string, territory: string): Promise<void> {
+  if (!pool) return;
+  const client = await pool.connect();
+  try {
+    await client.query(`
+      UPDATE families SET territories = array_remove(territories, $2), updated_at = NOW() WHERE id = $1
+    `, [familyId, territory]);
+  } finally {
+    client.release();
+  }
+}
+
+export async function updateFamilyIncomeRate(familyId: string, incomeRate: number): Promise<void> {
+  if (!pool) return;
+  const client = await pool.connect();
+  try {
+    await client.query(`
+      UPDATE families SET income_rate = $2, updated_at = NOW() WHERE id = $1
+    `, [familyId, incomeRate]);
+  } finally {
+    client.release();
+  }
+}
+
+// NPC database functions
+export async function getNpc(npcId: string): Promise<{
+  id: string;
+  familyId: string;
+  name: string;
+  role: string;
+  health: string;
+  loyalty: number;
+  personality: string;
+  skills: Record<string, number>;
+  archived: boolean;
+} | null> {
+  if (!pool) return null;
+  const client = await pool.connect();
+  try {
+    const result = await client.query(`
+      SELECT id, family_id as "familyId", name, role, health, loyalty, personality, skills, archived
+      FROM npcs WHERE id = $1
+    `, [npcId]);
+    if (result.rows.length === 0) return null;
+    const row = result.rows[0];
+    return {
+      id: row.id,
+      familyId: row.familyId,
+      name: row.name,
+      role: row.role,
+      health: row.health,
+      loyalty: row.loyalty,
+      personality: row.personality,
+      skills: row.skills || {},
+      archived: row.archived
+    };
+  } finally {
+    client.release();
+  }
+}
+
+export async function updateNpcHealth(npcId: string, health: string): Promise<void> {
+  if (!pool) return;
+  const client = await pool.connect();
+  try {
+    await client.query(`
+      UPDATE npcs SET health = $2, updated_at = NOW() WHERE id = $1
+    `, [npcId, health]);
+  } finally {
+    client.release();
+  }
+}
+
+export async function updateNpcLoyalty(npcId: string, loyalty: number): Promise<void> {
+  if (!pool) return;
+  const client = await pool.connect();
+  try {
+    await client.query(`
+      UPDATE npcs SET loyalty = $2, updated_at = NOW() WHERE id = $1
+    `, [npcId, Math.max(0, Math.min(100, loyalty))]);
+  } finally {
+    client.release();
+  }
+}
+
+export async function archiveNpc(npcId: string): Promise<void> {
+  if (!pool) return;
+  const client = await pool.connect();
+  try {
+    await client.query(`
+      UPDATE npcs SET archived = TRUE, archived_at = NOW(), updated_at = NOW() WHERE id = $1
+    `, [npcId]);
+  } finally {
+    client.release();
+  }
+}
+
+// Mission database functions
+export async function createMission(mission: {
+  id: string;
+  familyId: string;
+  npcId: string;
+  name: string;
+  description: string;
+  difficulty: number;
+  potentialReward: number;
+  potentialPenalty: number;
+}): Promise<void> {
+  if (!pool) return;
+  const client = await pool.connect();
+  try {
+    await client.query(`
+      INSERT INTO missions (id, family_id, npc_id, name, description, difficulty, potential_reward, potential_penalty, status)
+      VALUES ($1, $2, $3, $4, $5, $6, $7, $8, 'pending')
+    `, [mission.id, mission.familyId, mission.npcId, mission.name, mission.description, mission.difficulty, mission.potentialReward, mission.potentialPenalty]);
+  } finally {
+    client.release();
+  }
+}
+
+export async function getMission(missionId: string): Promise<{
+  id: string;
+  familyId: string;
+  npcId: string;
+  name: string;
+  description: string;
+  difficulty: number;
+  potentialReward: number;
+  potentialPenalty: number;
+  status: string;
+  outcome?: string;
+  resultMoney?: number;
+  resultInjury?: boolean;
+} | null> {
+  if (!pool) return null;
+  const client = await pool.connect();
+  try {
+    const result = await client.query(`
+      SELECT id, family_id as "familyId", npc_id as "npcId", name, description, difficulty,
+             potential_reward as "potentialReward", potential_penalty as "potentialPenalty",
+             status, outcome, result_money as "resultMoney", result_injury as "resultInjury"
+      FROM missions WHERE id = $1
+    `, [missionId]);
+    return result.rows[0] || null;
+  } finally {
+    client.release();
+  }
+}
+
+export async function updateMissionStatus(missionId: string, status: string, outcome?: string, resultMoney?: number, resultInjury?: boolean): Promise<void> {
+  if (!pool) return;
+  const client = await pool.connect();
+  try {
+    let query = `
+      UPDATE missions SET status = $2, updated_at = NOW()
+    `;
+    const params: any[] = [missionId, status];
+    if (outcome) {
+      query += `, outcome = $3, completed_at = NOW()`;
+      params.push(outcome);
+    }
+    if (resultMoney !== undefined) {
+      query += `, result_money = $${params.length + 1}`;
+      params.push(resultMoney);
+    }
+    if (resultInjury !== undefined) {
+      query += `, result_injury = $${params.length + 1}`;
+      params.push(resultInjury);
+    }
+    query += ` WHERE id = $1`;
+    await client.query(query, params);
+  } finally {
+    client.release();
+  }
+}
+
 // Generate LLM context for NPC
 export async function getNpcLLMContext(npcId: string): Promise<string> {
   const template = await getNpcTemplate(npcId);

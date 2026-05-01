@@ -4,6 +4,10 @@ import { Server } from 'socket.io';
 import dotenv from 'dotenv';
 import { Pool } from 'pg';
 import { getNpcLLMContext, recordPlayerInteraction, decayNpcTraits, processMemoryCausation, testConnection } from './db';
+import { IntentParser, IntentValidator } from './game/intentParser';
+import { MissionService } from './game/mission';
+import { FamilyService } from './game/family';
+import { NpcService } from './game/npc';
 
 // v2.4 - NPC social simulation
 dotenv.config();
@@ -147,6 +151,75 @@ function scheduleNextTick() {
 
 scheduleNextTick();
 
+async function executeIntent(intent: any, familyId: string, npcId: string, socket: any) {
+  let response = '';
+
+  switch (intent.type) {
+    case 'mission': {
+      const params = intent.params as any;
+      try {
+        const missionId = await MissionService.delegateMission(
+          familyId,
+          npcId,
+          `Mission: ${params.objective}`,
+          params.objective,
+          params.difficulty,
+          params.difficulty * 1000, // reward
+          params.difficulty * 500   // penalty
+        );
+        // Simulate immediate resolution for MVP
+        const result = await MissionService.resolveMission(missionId);
+        response = `Mission accepted. Outcome: ${result.outcome}. Money: ${result.resultMoney > 0 ? '+' : ''}${result.resultMoney}`;
+        if (result.resultInjury) response += '. Unfortunately, I was injured.';
+      } catch (err: any) {
+        response = `Cannot undertake mission: ${err.message}`;
+      }
+      break;
+    }
+
+    case 'promote': {
+      // TODO: Implement promotion logic
+      response = 'Promotion noted. I\'ll handle the arrangements.';
+      break;
+    }
+
+    case 'demote': {
+      // TODO: Implement demotion logic
+      response = 'Demotion understood. Changes will be made.';
+      break;
+    }
+
+    case 'status': {
+      const family = await FamilyService.getFamily(familyId);
+      response = family
+        ? `Family status: Money: $${family.money}, Territories: ${family.territories.join(', ')}, Income: $${family.incomeRate}/day`
+        : 'Family information unavailable.';
+      break;
+    }
+
+    case 'clarify': {
+      response = intent.clarification || 'Could you clarify what you mean?';
+      break;
+    }
+
+    case 'chat': {
+      response = 'I hear you. What would you like me to do?';
+      break;
+    }
+
+    default:
+      response = 'I\'m not sure what you mean.';
+  }
+
+  socket.emit('message', {
+    type: 'npc_message',
+    data: {
+      content: response,
+      timestamp: new Date().toISOString()
+    }
+  });
+}
+
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
@@ -172,36 +245,40 @@ io.on('connection', (socket) => {
         break;
 
 case 'send_message':
-        // Forward to AI for response
         const client = clients.get(socket.id);
         if (client && event.data && typeof event.data === 'object' && 'content' in event.data) {
           const content = (event.data as { content: string }).content;
           const npcId = (event.data as { npcId?: string }).npcId || 'consigliere';
           const playerId = client.playerId;
-          
-          // Record player interaction for NPC social simulation
+          const familyId = client.familyId;
+
+          // Record player interaction
           if (playerId) {
             recordPlayerInteraction(npcId, playerId, content).catch(() => {});
           }
-          
-          // Get NPC context
-          getNpcLLMContext(npcId).then(npcContext => {
-            let response = `I understand. "${content.substring(0, 20)}${content.length > 20 ? '...' : ''}"`;
-            if (npcContext) {
-              response = npcContext.split('.')[0] + '. ' + response;
-            }
+
+          // Parse intent
+          const intent = IntentParser.parse(content, npcId);
+          const validation = IntentValidator.validate(intent, familyId);
+
+          if (!validation.valid) {
             socket.emit('message', {
               type: 'npc_message',
               data: {
-                content: response + ' - The family is listening.',
+                content: `Error: ${validation.error}`,
                 timestamp: new Date().toISOString()
               }
             });
-          }).catch(() => {
+            break;
+          }
+
+          // Execute action
+          executeIntent(intent, familyId, npcId, socket).catch(err => {
+            console.error('Intent execution error:', err);
             socket.emit('message', {
               type: 'npc_message',
               data: {
-                content: `I understand. "${content.substring(0, 20)}${content.length > 20 ? '...' : ''}" - The family is listening.`,
+                content: 'Something went wrong. Please try again.',
                 timestamp: new Date().toISOString()
               }
             });
