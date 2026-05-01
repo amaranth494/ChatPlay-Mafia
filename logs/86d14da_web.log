@@ -1,0 +1,100 @@
+ We detected multiple lockfiles and selected the directory of /app/package-lock.json as the root directory.
+ To silence this warning, set `turbopack.root` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/turbopack#root-directory for more information.
+ Detected additional lockfiles: 
+   * /app/web/package-lock.json
+
+[DB] Configuring database connection...
+[Server] Starting...
+> Ready on http://0.0.0.0:8080
+[DB] Connected to database!
+[DB] Configuring database connection...
+[Server] Database OK, initializing tables...
+[DB] Initializing database tables...
+[DB] Tables created successfully
+[DB] Connected to database!
+[DB] Migrations complete
+[DB] Query result: { now: 2026-05-01T21:50:31.240Z }
+[Server] Γÿà Client connected: PCPEwwR1tdwgUkESAAAB
+[CURRENT GAME TIME] Day 1
+[Server] Γÿà Received: reset_game
+Client disconnected: PCPEwwR1tdwgUkESAAAB
+[DB] Connected to database!
+[DB] getUserNpcs: userId=10
+[DB] Found 2 NPCs: [
+  '7eaf59e5-dac0-4ef1-b963-a69276452751',
+  'ad31094e-9eb0-4f5c-80a0-ad3dce7b778a'
+]
+[Server] Γÿà Client connected: 1kb0B-3kXHjhRZ92AAAD
+[Server] Γÿà Received: join_game
+[Server] join_game START
+[Server] Sent thread_update
+[Server] Sent game_state
+[API] get_thread_messages: playerUuid=5a3a220e-bbfd-4a05-b83e-76aae10d3239, npcUuid="7eaf59e5-dac0-4ef1-b963-a69276452751"
+[DB] Connected to database!
+[DB] getOrCreateThread: npcUuid=7eaf59e5-dac0-4ef1-b963-a69276452751, playerUuid=5a3a220e-bbfd-4a05-b83e-76aae10d3239
+[DB] Found existing thread: uuid=4ca7bcde-bedb-467b-9fba-5f05958bd30b
+[API] threadUuid=4ca7bcde-bedb-467b-9fba-5f05958bd30b
+[DB] getMessageHistory: threadUuid=4ca7bcde-bedb-467b-9fba-5f05958bd30b, limit=50
+[DB] Loaded 1 messages
+[API] loaded 1 messages
+[DB] getOrCreateThread: npcUuid=7eaf59e5-dac0-4ef1-b963-a69276452751, playerUuid=10
+[DB] Creating new thread: uuid=fd992ca7-6ede-4174-87e4-dbeac52bb906
+[API] save_message: playerUuid=5a3a220e-bbfd-4a05-b83e-76aae10d3239, npcUuid=7eaf59e5-dac0-4ef1-b963-a69276452751, sender=player, content=You there?
+[DB] Found existing thread: uuid=4ca7bcde-bedb-467b-9fba-5f05958bd30b
+[DB] getOrCreateThread: npcUuid=7eaf59e5-dac0-4ef1-b963-a69276452751, playerUuid=5a3a220e-bbfd-4a05-b83e-76aae10d3239
+[API] threadUuid=4ca7bcde-bedb-467b-9fba-5f05958bd30b
+[DB] saveMessage: threadUuid=4ca7bcde-bedb-467b-9fba-5f05958bd30b, sender=player, content="You there?..."
+[DB] Message saved successfully
+[Server] Γÿà Received: send_message
+[DB] Connected to database!
+[Server] Processing message for NPC: 7eaf59e5-dac0-4ef1-b963-a69276452751 (Marco "Strategic")
+[DB] saveMessage: threadUuid=fd992ca7-6ede-4174-87e4-dbeac52bb906, sender=player, content="You there?..."
+[DB] Message saved successfully
+[DB] saveMessage: threadUuid=fd992ca7-6ede-4174-87e4-dbeac52bb906, sender=npc, content="Yeah, I'm here. What's on your..."
+[DB] Message saved successfully
+Client disconnected: 1kb0B-3kXHjhRZ92AAAD
+[DB] Connected to database!
+[DB] clearFamilyInfo: playerUuid=5a3a220e-bbfd-4a05-b83e-76aae10d3239
+[DB] Cleared family info for user 10 (playerUuid=5a3a220e-bbfd-4a05-b83e-76aae10d3239)
+[DB] Cleared existing NPCs for user 10
+[DB] Generated NPCs for user 10: 3b405887-9ca2-4cf1-b372-21860abb83b3 (Salvatore "The Advisor"), b2ec20c1-1fc1-4b04-b6ff-0db4ca486f8d (Luca "The Blade")
+[DB] getUserNpcs: userId=10
+[DB] Found 2 NPCs: [
+  '3b405887-9ca2-4cf1-b372-21860abb83b3',
+  'b2ec20c1-1fc1-4b04-b6ff-0db4ca486f8d'
+]
+[DB] getUserNpcs: userId=10
+[DB] Found 2 NPCs: [
+  '3b405887-9ca2-4cf1-b372-21860abb83b3',
+  'b2ec20c1-1fc1-4b04-b6ff-0db4ca486f8d'
+]
+[Server] Γÿà Client connected: yeCfR4lFZzhuJbfJAAAF
+[Server] Γÿà Received: join_game
+[Server] join_game START
+[Server] Sent thread_update
+[Server] Sent game_state
+[CURRENT GAME TIME] Day 1
+[Server] Γÿà Received: reset_game
+[API] get_thread_messages: playerUuid=5a3a220e-bbfd-4a05-b83e-76aae10d3239, npcUuid="b2ec20c1-1fc1-4b04-b6ff-0db4ca486f8d"
+[DB] getOrCreateThread: npcUuid=b2ec20c1-1fc1-4b04-b6ff-0db4ca486f8d, playerUuid=5a3a220e-bbfd-4a05-b83e-76aae10d3239
+[DB] Creating new thread: uuid=f40e2a89-7094-45ba-8286-08017ec4e58c
+[API] threadUuid=f40e2a89-7094-45ba-8286-08017ec4e58c
+[DB] getMessageHistory: threadUuid=f40e2a89-7094-45ba-8286-08017ec4e58c, limit=50
+[DB] Loaded 0 messages
+[API] loaded 0 messages
+[DB] getOrCreateThread: npcUuid=b2ec20c1-1fc1-4b04-b6ff-0db4ca486f8d, playerUuid=10
+[DB] Creating new thread: uuid=7e42daaa-fc28-470e-a5df-0112d168e312
+[DB] Found existing thread: uuid=f40e2a89-7094-45ba-8286-08017ec4e58c
+[API] threadUuid=f40e2a89-7094-45ba-8286-08017ec4e58c
+[DB] saveMessage: threadUuid=f40e2a89-7094-45ba-8286-08017ec4e58c, sender=player, content="Hi Luca..."
+[DB] Message saved successfully
+[Server] Γÿà Received: send_message
+[DB] Connected to database!
+[Server] Processing message for NPC: b2ec20c1-1fc1-4b04-b6ff-0db4ca486f8d (Luca "The Blade")
+[API] save_message: playerUuid=5a3a220e-bbfd-4a05-b83e-76aae10d3239, npcUuid=b2ec20c1-1fc1-4b04-b6ff-0db4ca486f8d, sender=player, content=Hi Luca
+[DB] getOrCreateThread: npcUuid=b2ec20c1-1fc1-4b04-b6ff-0db4ca486f8d, playerUuid=5a3a220e-bbfd-4a05-b83e-76aae10d3239
+[DB] saveMessage: threadUuid=7e42daaa-fc28-470e-a5df-0112d168e312, sender=player, content="Hi Luca..."
+[DB] Message saved successfully
+[DB] saveMessage: threadUuid=7e42daaa-fc28-470e-a5df-0112d168e312, sender=npc, content="Boss, how can I assist you tod..."
+[DB] Message saved successfully

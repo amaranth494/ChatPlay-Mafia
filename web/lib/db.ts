@@ -807,7 +807,7 @@ export async function getNpcByUuid(npcUuid: string): Promise<{npcId: string; nam
   const client = await pool.connect();
   try {
     const result = await client.query(
-      'SELECT npc_id, name, role, personality FROM npcs WHERE npc_id = $1',
+      'SELECT npc_id AS "npcId", name, role, personality FROM npcs WHERE npc_id = $1',
       [npcUuid]
     );
     if (result.rows.length === 0) return null;
