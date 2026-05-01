@@ -50,10 +50,10 @@ export default function Home() {
               .then(npcResult => {
                 if (npcResult.success && npcResult.npcs && npcResult.npcs.length > 0) {
                   console.log('[UI] NPCs from DB:', npcResult.npcs);
-                  // Convert NPCs to thread format (database returns npc_id not npcId)
-                  const npcThreads: Thread[] = npcResult.npcs.map((npc: {npc_id: string; name: string; role: string}) => ({
-                    id: npc.npc_id,
-                    npcId: npc.npc_id,
+                  // Convert NPCs to thread format (DB returns camelCase npcId)
+                  const npcThreads: Thread[] = npcResult.npcs.map((npc: {npcId: string; name: string; role: string}) => ({
+                    id: npc.npcId,
+                    npcId: npc.npcId,
                     npcName: npc.name,
                     unreadCount: 0,
                     isArchive: false,
@@ -72,9 +72,9 @@ export default function Home() {
                     .then(genResult => {
                       console.log('[UI] generate_npcs result:', genResult);
                       if (genResult.success && genResult.npcs) {
-                        const npcThreads: Thread[] = genResult.npcs.map((npc: {npc_id: string; name: string; role: string}) => ({
-                          id: npc.npc_id,
-                          npcId: npc.npc_id,
+                        const npcThreads: Thread[] = genResult.npcs.map((npc: {npcId: string; name: string; role: string}) => ({
+                          id: npc.npcId,
+                          npcId: npc.npcId,
                           npcName: npc.name,
                           unreadCount: 0,
                           isArchive: false,
