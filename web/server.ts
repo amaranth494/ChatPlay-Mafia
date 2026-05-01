@@ -44,56 +44,14 @@ const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
 });
 
-interface Message {
-  id: string;
-  sender: 'player' | 'npc';
-  content: string;
-  timestamp: string;
-}
-
-interface NpcState {
-  id: string;
-  name: string;
-  role: string;
-  personality: string;
-  messages: Message[];
-  messageCount: number;
-}
-
-console.log('[Server] Initializing NPC states');
-
-const npcs: Record<string, NpcState> = {
-  npc_consiglieri: {
-    id: 'npc_consiglieri',
-    name: 'Consigliere',
-    role: 'Advisor',
-    personality: 'Wary, strategic, speaks in measured tones. Always thinks three moves ahead.',
-    messages: [],
-    messageCount: 0
-  },
-  npc_luca: {
-    id: 'npc_luca',
-    name: 'Luca "The Blade"',
-    role: 'Enforcer',
-    personality: 'Short-tempered, violent, loyal but unpredictable. Speaks bluntly.',
-    messages: [],
-    messageCount: 0
-  },
-  npc_marco: {
-    id: 'npc_marco',
-    name: 'Marco',
-    role: 'Soldier',
-    personality: 'Nervous, eager to please, relatively new to the family. Speaks formally.',
-    messages: [],
-    messageCount: 0
-  }
-};
-
 interface ConnectedClient {
   playerId: string;
   familyId: string;
-  selectedNpc: string | null;
 }
+
+// UUID validator (canonical 8-4-4-4-12 form)
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+const isUuid = (v: unknown): v is string => typeof v === 'string' && UUID_RE.test(v);
 
 const clients = new Map<string, ConnectedClient>();
 
@@ -113,25 +71,11 @@ io.on('connection', (socket) => {
         const eventData = event as { type: string; playerId?: string };
         const clientPlayerId = eventData.playerId || `player_${socket.id.slice(0, 8)}`;
         const familyId = `family_${socket.id.slice(0, 8)}`;
-        
-        clients.set(socket.id, { playerId: clientPlayerId, familyId, selectedNpc: null });
-        
-        const threads = Object.values(npcs).map(npc => ({
-          id: `thread_${npc.id}`,
-          npcId: npc.id,
-          npcName: npc.name,
-          lastMessageAt: npc.messages.length > 0 
-            ? npc.messages[npc.messages.length - 1].timestamp 
-            : new Date(Date.now() - 3600000).toISOString(),
-          unreadCount: npc.messageCount,
-          isArchive: false
-        }));
 
-        socket.emit('message', {
-          type: 'thread_update',
-          data: threads
-        });
-        console.log('[Server] Sent thread_update');
+        clients.set(socket.id, { playerId: clientPlayerId, familyId });
+
+        // Thread list is loaded by the client from the DB (UUID-based).
+        // We intentionally do NOT emit a hardcoded thread_update here.
 
         socket.emit('message', {
           type: 'game_state',
@@ -146,7 +90,7 @@ io.on('connection', (socket) => {
         break;
       }
 
-case 'select_npc': {
+      case 'select_npc': {
         console.log('[Server] select_npc START');
         try {
           const client = clients.get(socket.id);
@@ -154,47 +98,44 @@ case 'select_npc': {
             console.log('[Server] No client found');
             break;
           }
-          
-          const data = event.data as { npcId: string } | undefined;
-          if (!data || !data.npcId) {
-            console.log('[Server] No npcId in data');
+
+          const data = event.data as { npcId?: string } | undefined;
+          if (!data || !isUuid(data.npcId)) {
+            console.log('[Server] select_npc rejected: npcId must be a UUID');
             break;
           }
-          
-          client.selectedNpc = data.npcId;
-          console.log('[Server] Selected:', data.npcId);
-          
-          const npc = npcs[data.npcId];
-          if (!npc) {
-            console.log('[Server] NPC not found:', data.npcId);
+
+          const npcUuid = data.npcId;
+          const dbNpc = await getNpcByUuid(npcUuid);
+          if (!dbNpc) {
+            console.log('[Server] NPC not found:', npcUuid);
             break;
           }
-          
+
           // Fetch history from database
           try {
-            const threadId = await getOrCreateThread(data.npcId, client.playerId);
+            const threadId = await getOrCreateThread(npcUuid, client.playerId);
             const messages = await getMessageHistory(threadId);
-            
+
             socket.emit('message', {
               type: 'thread_history',
               data: {
-                npcId: npc.id,
+                npcId: npcUuid,
                 messages
               }
             });
             console.log('[Server] Sent history with', messages.length, 'messages');
           } catch (dbError) {
             console.error('[Server] DB error:', dbError);
-            // Fallback to empty history
             socket.emit('message', {
               type: 'thread_history',
               data: {
-                npcId: npc.id,
+                npcId: npcUuid,
                 messages: []
               }
             });
           }
-          
+
         } catch (e: unknown) {
           console.log('[Server] Error:', e);
         }
@@ -203,156 +144,82 @@ case 'select_npc': {
 
       case 'send_message': {
         const client = clients.get(socket.id);
-        if (client && event.data && typeof event.data === 'object' && 'content' in event.data) {
-          const content = (event.data as { content: string }).content;
-          const providedNpcId = (event.data as { npcId?: string }).npcId;
-          const npcId = providedNpcId || client.selectedNpc || 'npc_consiglieri';
-
-          // Try hardcoded NPCs first, then fall back to DB lookup for user-generated NPCs
-          let npc: { id: string; name: string; role: string; personality: string } | null = npcs[npcId] || null;
-          if (!npc) {
-            const dbNpc = await getNpcByUuid(npcId);
-            if (dbNpc) {
-              npc = { id: dbNpc.npcId, name: dbNpc.name, role: dbNpc.role, personality: dbNpc.personality };
-            }
-          }
-
-          console.log('[Server] Processing message for NPC:', npcId, npc ? `(${npc.name})` : '(not found)');
-
-          if (npc && process.env.OPENAI_API_KEY) {
-            try {
-              const threadId = await getOrCreateThread(npcId, client.playerId);
-              
-              const completion = await openai.chat.completions.create({
-                model: 'gpt-4o-mini',
-                messages: [
-                  { role: 'system', content: `You are ${npc.name}, a ${npc.role} in a mafia family. Your personality: ${npc.personality}. You answer messages from your Boss (the player). Keep responses brief (1-2 sentences), in character, never mention game mechanics.` },
-                  { role: 'user', content: content }
-                ],
-                max_tokens: 150
-              });
-              
-              const response = completion.choices[0]?.message?.content || "I understand, Boss.";
-              const timestamp = new Date().toISOString();
-              
-              // Save messages to database
-              await saveMessage(threadId, 'player', content);
-              await saveMessage(threadId, 'npc', response);
-              
-              socket.emit('message', {
-                type: 'npc_message',
-                data: {
-                  npcId: npc.id,
-                  content: response,
-                  timestamp
-                }
-              });
-            } catch (err) {
-              console.error('OpenAI error:', err);
-              const fallback = `I hear you, Boss. "${content.substring(0, 30)}..." - we'll discuss this further.`;
-              const timestamp = new Date().toISOString();
-              
-              // Still save to database on error
-              try {
-                const threadId = await getOrCreateThread(npcId, client.playerId);
-                await saveMessage(threadId, 'player', content);
-                await saveMessage(threadId, 'npc', fallback);
-              } catch (dbErr) {
-                console.error('[Server] DB save error:', dbErr);
-              }
-              
-              socket.emit('message', {
-                type: 'npc_message',
-                data: {
-                  npcId: npc.id,
-                  content: fallback,
-                  timestamp
-                }
-              });
-            }
-          } else if (npc) {
-            const fallback = `I understand, Boss. "${content.substring(0, 30)}..." - we'll discuss this.`;
-            const timestamp = new Date().toISOString();
-
-            // Persist via DB
-            try {
-              const threadId = await getOrCreateThread(npcId, client.playerId);
-              await saveMessage(threadId, 'player', content);
-              await saveMessage(threadId, 'npc', fallback);
-            } catch (dbErr) {
-              console.error('[Server] DB save error:', dbErr);
-            }
-
-            // Update hardcoded state if present (legacy)
-            const hardcoded = npcs[npcId];
-            if (hardcoded) {
-              hardcoded.messages.push({ id: `msg_${Date.now()}_player`, sender: 'player', content, timestamp });
-              hardcoded.messages.push({ id: `msg_${Date.now()}_npc`, sender: 'npc', content: fallback, timestamp });
-              hardcoded.messageCount++;
-            }
-
-            socket.emit('message', {
-              type: 'npc_message',
-              data: {
-                npcId: npc.id,
-                content: fallback,
-                timestamp
-              }
-            });
-          } else {
-            console.log('[Server] NPC not found, cannot respond:', npcId);
-            socket.emit('message', {
-              type: 'npc_message',
-              data: {
-                npcId,
-                content: "I'm not available right now, Boss.",
-                timestamp: new Date().toISOString()
-              }
-            });
-          }
-          
-          socket.emit('message', {
-            type: 'thread_update',
-            data: Object.values(npcs).map(n => ({
-              id: `thread_${n.id}`,
-              npcId: n.id,
-              npcName: n.name,
-              lastMessageAt: n.messages.length > 0 
-                ? n.messages[n.messages.length - 1].timestamp 
-                : new Date().toISOString(),
-              unreadCount: n.messageCount,
-              isArchive: false
-            }))
-          });
+        if (!client || !event.data || typeof event.data !== 'object' || !('content' in event.data)) {
+          break;
         }
+        const content = (event.data as { content: string }).content;
+        const providedNpcId = (event.data as { npcId?: string }).npcId;
+
+        if (!isUuid(providedNpcId)) {
+          console.log('[Server] send_message rejected: npcId must be a UUID, got:', providedNpcId);
+          socket.emit('message', {
+            type: 'error',
+            data: { message: 'npcId must be a UUID' }
+          });
+          break;
+        }
+
+        const npcUuid = providedNpcId;
+        const dbNpc = await getNpcByUuid(npcUuid);
+        if (!dbNpc) {
+          console.log('[Server] NPC not found:', npcUuid);
+          socket.emit('message', {
+            type: 'npc_message',
+            data: {
+              npcId: npcUuid,
+              content: "I'm not available right now, Boss.",
+              timestamp: new Date().toISOString()
+            }
+          });
+          break;
+        }
+
+        console.log('[Server] Processing message for NPC:', npcUuid, `(${dbNpc.name})`);
+
+        const threadId = await getOrCreateThread(npcUuid, client.playerId);
+        await saveMessage(threadId, 'player', content);
+
+        let responseText: string;
+        if (process.env.OPENAI_API_KEY) {
+          try {
+            const completion = await openai.chat.completions.create({
+              model: 'gpt-4o-mini',
+              messages: [
+                { role: 'system', content: `You are ${dbNpc.name}, a ${dbNpc.role} in a mafia family. Your personality: ${dbNpc.personality}. You answer messages from your Boss (the player). Keep responses brief (1-2 sentences), in character, never mention game mechanics.` },
+                { role: 'user', content: content }
+              ],
+              max_tokens: 150
+            });
+            responseText = completion.choices[0]?.message?.content || "I understand, Boss.";
+          } catch (err) {
+            console.error('OpenAI error:', err);
+            responseText = `I hear you, Boss. "${content.substring(0, 30)}..." - we'll discuss this further.`;
+          }
+        } else {
+          responseText = `I understand, Boss. "${content.substring(0, 30)}..." - we'll discuss this.`;
+        }
+
+        const timestamp = new Date().toISOString();
+        await saveMessage(threadId, 'npc', responseText);
+
+        socket.emit('message', {
+          type: 'npc_message',
+          data: {
+            npcId: npcUuid,
+            content: responseText,
+            timestamp
+          }
+        });
         break;
       }
 
       case 'mark_read': {
         const client = clients.get(socket.id);
-        if (client && event.data && typeof event.data === 'object' && 'threadId' in event.data) {
-          const threadId = (event.data as { threadId: string }).threadId;
-          const npcId = threadId.replace('thread_', '');
-          console.log('[Server] Marking thread as read:', npcId);
-          
-          if (npcs[npcId]) {
-            npcs[npcId].messageCount = 0;
-          }
-          
-          socket.emit('message', {
-            type: 'thread_update',
-            data: Object.values(npcs).map(n => ({
-              id: `thread_${n.id}`,
-              npcId: n.id,
-              npcName: n.name,
-              lastMessageAt: n.messages.length > 0 
-                ? n.messages[n.messages.length - 1].timestamp 
-                : new Date(Date.now() - 3600000).toISOString(),
-              unreadCount: n.messageCount,
-              isArchive: false
-            }))
-          });
+        if (!client || !event.data || typeof event.data !== 'object' || !('threadId' in event.data)) {
+          break;
         }
+        // Thread read-state is managed client-side / via DB elsewhere.
+        // No hardcoded NPC bookkeeping here.
         break;
       }
     }

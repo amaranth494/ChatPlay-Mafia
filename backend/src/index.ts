@@ -248,8 +248,18 @@ case 'send_message':
         const client = clients.get(socket.id);
         if (client && event.data && typeof event.data === 'object' && 'content' in event.data) {
           const content = (event.data as { content: string }).content;
-          const npcId = (event.data as { npcId?: string }).npcId || 'consigliere';
+          const npcId = (event.data as { npcId?: string }).npcId;
           const playerId = client.playerId;
+
+          const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+          if (!npcId || !UUID_RE.test(npcId)) {
+            console.log('[Server] send_message rejected: npcId must be a UUID');
+            socket.emit('message', {
+              type: 'error',
+              data: { message: 'npcId must be a UUID' }
+            });
+            break;
+          }
           const familyId = client.familyId;
 
           // Record player interaction

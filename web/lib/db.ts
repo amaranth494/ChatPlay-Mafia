@@ -822,10 +822,10 @@ export async function getUserNpcs(userId: number): Promise<{npcId: string; name:
   try {
     console.log(`[DB] getUserNpcs: userId=${userId}`);
     const result = await client.query(
-      'SELECT npc_id, name, role, personality FROM npcs WHERE user_id = $1',
+      'SELECT npc_id AS "npcId", name, role, personality FROM npcs WHERE user_id = $1',
       [userId]
     );
-    console.log(`[DB] Found ${result.rows.length} NPCs:`, result.rows.map(r => r.npc_id));
+    console.log(`[DB] Found ${result.rows.length} NPCs:`, result.rows.map(r => r.npcId));
     return result.rows;
   } finally {
     client.release();
