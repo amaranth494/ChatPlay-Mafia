@@ -3,7 +3,7 @@ import { createServer } from 'http';
 import { parse } from 'url';
 import { Server as SocketIOServer } from 'socket.io';
 import OpenAI from 'openai';
-import { testConnection, initDatabase, getOrCreateThread, saveMessage, getMessageHistory } from './lib/db';
+import { testConnection, initDatabase, getOrCreateThread, saveMessage, getMessageHistory, getNpcByUuid } from './lib/db';
 
 const dev = process.env.NODE_ENV !== 'production';
 const hostname = '0.0.0.0';
@@ -205,11 +205,20 @@ case 'select_npc': {
         const client = clients.get(socket.id);
         if (client && event.data && typeof event.data === 'object' && 'content' in event.data) {
           const content = (event.data as { content: string }).content;
-          const npcId = client.selectedNpc || 'npc_consiglieri';
-          const npc = npcs[npcId];
-          
-          console.log('[Server] Processing message for NPC:', npcId);
-          
+          const providedNpcId = (event.data as { npcId?: string }).npcId;
+          const npcId = providedNpcId || client.selectedNpc || 'npc_consiglieri';
+
+          // Try hardcoded NPCs first, then fall back to DB lookup for user-generated NPCs
+          let npc: { id: string; name: string; role: string; personality: string } | null = npcs[npcId] || null;
+          if (!npc) {
+            const dbNpc = await getNpcByUuid(npcId);
+            if (dbNpc) {
+              npc = { id: dbNpc.npcId, name: dbNpc.name, role: dbNpc.role, personality: dbNpc.personality };
+            }
+          }
+
+          console.log('[Server] Processing message for NPC:', npcId, npc ? `(${npc.name})` : '(not found)');
+
           if (npc && process.env.OPENAI_API_KEY) {
             try {
               const threadId = await getOrCreateThread(npcId, client.playerId);
@@ -261,28 +270,42 @@ case 'select_npc': {
                 }
               });
             }
-          } else {
+          } else if (npc) {
             const fallback = `I understand, Boss. "${content.substring(0, 30)}..." - we'll discuss this.`;
-            
-            npc.messages.push({
-              id: `msg_${Date.now()}_player`,
-              sender: 'player',
-              content,
-              timestamp: new Date().toISOString()
-            });
-            npc.messages.push({
-              id: `msg_${Date.now()}_npc`,
-              sender: 'npc',
-              content: fallback,
-              timestamp: new Date().toISOString()
-            });
-            npc.messageCount++;
-            
+            const timestamp = new Date().toISOString();
+
+            // Persist via DB
+            try {
+              const threadId = await getOrCreateThread(npcId, client.playerId);
+              await saveMessage(threadId, 'player', content);
+              await saveMessage(threadId, 'npc', fallback);
+            } catch (dbErr) {
+              console.error('[Server] DB save error:', dbErr);
+            }
+
+            // Update hardcoded state if present (legacy)
+            const hardcoded = npcs[npcId];
+            if (hardcoded) {
+              hardcoded.messages.push({ id: `msg_${Date.now()}_player`, sender: 'player', content, timestamp });
+              hardcoded.messages.push({ id: `msg_${Date.now()}_npc`, sender: 'npc', content: fallback, timestamp });
+              hardcoded.messageCount++;
+            }
+
             socket.emit('message', {
               type: 'npc_message',
               data: {
                 npcId: npc.id,
                 content: fallback,
+                timestamp
+              }
+            });
+          } else {
+            console.log('[Server] NPC not found, cannot respond:', npcId);
+            socket.emit('message', {
+              type: 'npc_message',
+              data: {
+                npcId,
+                content: "I'm not available right now, Boss.",
                 timestamp: new Date().toISOString()
               }
             });

@@ -4,6 +4,7 @@ console.log('[Socket] Socket client loaded');
 
 export interface PlayerMessage {
   content: string;
+  npcId?: string;
 }
 
 export interface NpcMessage {
@@ -165,8 +166,8 @@ class ChatPlayClient {
     this.send({ type: 'join_game', playerId });
   }
 
-  sendMessage(content: string): void {
-    this.send({ type: 'send_message', data: { content } });
+  sendMessage(content: string, npcId?: string): void {
+    this.send({ type: 'send_message', data: { content, npcId } });
   }
 
   selectNpc(npcId: string): void {

@@ -1,0 +1,150 @@
+[DB] Configuring database connection...
+[Server] Starting...
+[Server] Database URL found, testing connection...
+[Server] Initializing NPC states
+[Server] Game tick cycle started (every 30 minutes)
+ΓÜá Warning: Next.js inferred your workspace root, but it may not be correct.
+ We detected multiple lockfiles and selected the directory of /app/package-lock.json as the root directory.
+ To silence this warning, set `turbopack.root` in your Next.js config, or consider removing one of the lockfiles if it's not needed.
+   See https://nextjs.org/docs/app/api-reference/config/next-config-js/turbopack#root-directory for more information.
+ Detected additional lockfiles: 
+   * /app/web/package-lock.json
+
+> Ready on http://0.0.0.0:8080
+[DB] Configuring database connection...
+[DB] Connected to database!
+[DB] Query result: { now: 2026-05-01T21:39:54.841Z }
+[Server] Database OK, initializing tables...
+[DB] Initializing database tables...
+[DB] Tables created successfully
+[DB] Connected to database!
+[DB] Migrations complete
+[DB] Connected to database!
+[Email] Creating transporter: smtp.gmail.com:465, secure=true
+[Email] User: castle.and.clark@gmail.com
+[Email] Verifying SMTP connection...
+[Email] SMTP connection verified successfully
+[Email] Message sent: <98e2cd8c-fd24-5512-1cef-c7bce0ded90c@chatplay-mafia.com>
+[Email] Response: 250 2.0.0 OK  1777671650 5a478bee46e88-2ee38d78391sm8147292eec.7 - gsmtp
+  '1e0a4c69-3e91-42f5-b794-e62edf8e0085',
+  '420c26c0-d2c8-44eb-a77f-fe5f7e9f3050'
+]
+[Server] Γÿà Client connected: D5I_o_BzHrFnl0nTAAAB
+[Server] Γÿà Received: join_game
+[Server] join_game START
+[Server] Sent thread_update
+[Server] Sent game_state
+[CURRENT GAME TIME] Day 1
+[DB] Connected to database!
+[Server] Γÿà Received: reset_game
+[DB] getUserNpcs: userId=10
+[DB] Found 2 NPCs: [
+[API] get_thread_messages: playerUuid=5a3a220e-bbfd-4a05-b83e-76aae10d3239, npcUuid="1e0a4c69-3e91-42f5-b794-e62edf8e0085"
+[DB] getOrCreateThread: npcUuid=1e0a4c69-3e91-42f5-b794-e62edf8e0085, playerUuid=5a3a220e-bbfd-4a05-b83e-76aae10d3239
+[DB] Creating new thread: uuid=4369d539-00ea-4c3e-a68b-cf222df8ea6f
+[API] threadUuid=4369d539-00ea-4c3e-a68b-cf222df8ea6f
+[DB] getMessageHistory: threadUuid=4369d539-00ea-4c3e-a68b-cf222df8ea6f, limit=50
+[DB] Loaded 0 messages
+[API] loaded 0 messages
+[API] save_message: playerUuid=5a3a220e-bbfd-4a05-b83e-76aae10d3239, npcUuid=1e0a4c69-3e91-42f5-b794-e62edf8e0085, sender=player, content=Hello
+[DB] getOrCreateThread: npcUuid=1e0a4c69-3e91-42f5-b794-e62edf8e0085, playerUuid=5a3a220e-bbfd-4a05-b83e-76aae10d3239
+[DB] Found existing thread: uuid=4369d539-00ea-4c3e-a68b-cf222df8ea6f
+[API] threadUuid=4369d539-00ea-4c3e-a68b-cf222df8ea6f
+[DB] saveMessage: threadUuid=4369d539-00ea-4c3e-a68b-cf222df8ea6f, sender=player, content="Hello..."
+[DB] Message saved successfully
+[Server] Γÿà Received: send_message
+[Server] Processing message for NPC: npc_consiglieri
+[DB] Connected to database!
+[DB] getOrCreateThread: npcUuid=npc_consiglieri, playerUuid=10
+[DB] Found existing thread: uuid=0adcc6b9-8c6c-4336-9e14-dab2c32d54c8
+[DB] saveMessage: threadUuid=0adcc6b9-8c6c-4336-9e14-dab2c32d54c8, sender=player, content="Hello..."
+[DB] Message saved successfully
+[DB] saveMessage: threadUuid=0adcc6b9-8c6c-4336-9e14-dab2c32d54c8, sender=npc, content="Boss, good to hear from you. H..."
+[DB] Message saved successfully
+[API] get_thread_messages: playerUuid=5a3a220e-bbfd-4a05-b83e-76aae10d3239, npcUuid="420c26c0-d2c8-44eb-a77f-fe5f7e9f3050"
+[DB] getOrCreateThread: npcUuid=420c26c0-d2c8-44eb-a77f-fe5f7e9f3050, playerUuid=5a3a220e-bbfd-4a05-b83e-76aae10d3239
+[DB] Creating new thread: uuid=3523eac0-1fcb-4022-a525-53a217197930
+[API] threadUuid=3523eac0-1fcb-4022-a525-53a217197930
+[DB] getMessageHistory: threadUuid=3523eac0-1fcb-4022-a525-53a217197930, limit=50
+[DB] Loaded 0 messages
+[API] loaded 0 messages
+[API] save_message: playerUuid=5a3a220e-bbfd-4a05-b83e-76aae10d3239, npcUuid=420c26c0-d2c8-44eb-a77f-fe5f7e9f3050, sender=player, content=Hi
+[DB] getOrCreateThread: npcUuid=420c26c0-d2c8-44eb-a77f-fe5f7e9f3050, playerUuid=5a3a220e-bbfd-4a05-b83e-76aae10d3239
+[DB] Found existing thread: uuid=3523eac0-1fcb-4022-a525-53a217197930
+[API] threadUuid=3523eac0-1fcb-4022-a525-53a217197930
+[DB] saveMessage: threadUuid=3523eac0-1fcb-4022-a525-53a217197930, sender=player, content="Hi..."
+[DB] Message saved successfully
+[Server] Γÿà Received: send_message
+[Server] Processing message for NPC: npc_consiglieri
+[DB] getOrCreateThread: npcUuid=npc_consiglieri, playerUuid=10
+[DB] Found existing thread: uuid=0adcc6b9-8c6c-4336-9e14-dab2c32d54c8
+Client disconnected: D5I_o_BzHrFnl0nTAAAB
+[DB] saveMessage: threadUuid=0adcc6b9-8c6c-4336-9e14-dab2c32d54c8, sender=player, content="Hi..."
+[DB] Message saved successfully
+[DB] saveMessage: threadUuid=0adcc6b9-8c6c-4336-9e14-dab2c32d54c8, sender=npc, content="Boss, how can I assist you tod..."
+[DB] Message saved successfully
+[DB] clearFamilyInfo: playerUuid=5a3a220e-bbfd-4a05-b83e-76aae10d3239
+[DB] Cleared family info for user 10 (playerUuid=5a3a220e-bbfd-4a05-b83e-76aae10d3239)
+[Server] join_game START
+[Server] Sent thread_update
+[Server] Sent game_state
+[CURRENT GAME TIME] Day 1
+[Server] Γÿà Received: reset_game
+[DB] Connected to database!
+[DB] Cleared existing NPCs for user 10
+[DB] Generated NPCs for user 10: 7eaf59e5-dac0-4ef1-b963-a69276452751 (Marco "Strategic"), ad31094e-9eb0-4f5c-80a0-ad3dce7b778a (Vinnie "µï│")
+[DB] getUserNpcs: userId=10
+[DB] Found 2 NPCs: [
+  '7eaf59e5-dac0-4ef1-b963-a69276452751',
+  'ad31094e-9eb0-4f5c-80a0-ad3dce7b778a'
+]
+[DB] getUserNpcs: userId=10
+[DB] Found 2 NPCs: [
+  '7eaf59e5-dac0-4ef1-b963-a69276452751',
+  'ad31094e-9eb0-4f5c-80a0-ad3dce7b778a'
+]
+[Server] Γÿà Client connected: KqRa6HTO2o_W_NaOAAAD
+[Server] Γÿà Received: join_game
+[API] get_thread_messages: playerUuid=5a3a220e-bbfd-4a05-b83e-76aae10d3239, npcUuid="7eaf59e5-dac0-4ef1-b963-a69276452751"
+[DB] getOrCreateThread: npcUuid=7eaf59e5-dac0-4ef1-b963-a69276452751, playerUuid=5a3a220e-bbfd-4a05-b83e-76aae10d3239
+[DB] Creating new thread: uuid=4ca7bcde-bedb-467b-9fba-5f05958bd30b
+[API] threadUuid=4ca7bcde-bedb-467b-9fba-5f05958bd30b
+[DB] getMessageHistory: threadUuid=4ca7bcde-bedb-467b-9fba-5f05958bd30b, limit=50
+[DB] Loaded 0 messages
+[API] loaded 0 messages
+[API] save_message: playerUuid=5a3a220e-bbfd-4a05-b83e-76aae10d3239, npcUuid=7eaf59e5-dac0-4ef1-b963-a69276452751, sender=player, content=Hiya
+[DB] getOrCreateThread: npcUuid=7eaf59e5-dac0-4ef1-b963-a69276452751, playerUuid=5a3a220e-bbfd-4a05-b83e-76aae10d3239
+[DB] Found existing thread: uuid=4ca7bcde-bedb-467b-9fba-5f05958bd30b
+[API] threadUuid=4ca7bcde-bedb-467b-9fba-5f05958bd30b
+[DB] saveMessage: threadUuid=4ca7bcde-bedb-467b-9fba-5f05958bd30b, sender=player, content="Hiya..."
+[DB] Message saved successfully
+[Server] Γÿà Received: send_message
+[Server] Processing message for NPC: npc_consiglieri
+[DB] Connected to database!
+[DB] getOrCreateThread: npcUuid=npc_consiglieri, playerUuid=10
+[DB] Found existing thread: uuid=0adcc6b9-8c6c-4336-9e14-dab2c32d54c8
+[DB] saveMessage: threadUuid=0adcc6b9-8c6c-4336-9e14-dab2c32d54c8, sender=player, content="Hiya..."
+[DB] Message saved successfully
+[DB] saveMessage: threadUuid=0adcc6b9-8c6c-4336-9e14-dab2c32d54c8, sender=npc, content="Boss, good to see you. WhatΓÇÖs ..."
+[DB] Message saved successfully
+[API] get_thread_messages: playerUuid=5a3a220e-bbfd-4a05-b83e-76aae10d3239, npcUuid="ad31094e-9eb0-4f5c-80a0-ad3dce7b778a"
+[DB] getOrCreateThread: npcUuid=ad31094e-9eb0-4f5c-80a0-ad3dce7b778a, playerUuid=5a3a220e-bbfd-4a05-b83e-76aae10d3239
+[DB] Creating new thread: uuid=8e4cee3c-056e-4afe-8581-416155665540
+[API] threadUuid=8e4cee3c-056e-4afe-8581-416155665540
+[DB] getMessageHistory: threadUuid=8e4cee3c-056e-4afe-8581-416155665540, limit=50
+[DB] Loaded 0 messages
+[API] loaded 0 messages
+[API] save_message: playerUuid=5a3a220e-bbfd-4a05-b83e-76aae10d3239, npcUuid=ad31094e-9eb0-4f5c-80a0-ad3dce7b778a, sender=player, content=Hullo
+[DB] getOrCreateThread: npcUuid=ad31094e-9eb0-4f5c-80a0-ad3dce7b778a, playerUuid=5a3a220e-bbfd-4a05-b83e-76aae10d3239
+[DB] Found existing thread: uuid=8e4cee3c-056e-4afe-8581-416155665540
+[API] threadUuid=8e4cee3c-056e-4afe-8581-416155665540
+[DB] saveMessage: threadUuid=8e4cee3c-056e-4afe-8581-416155665540, sender=player, content="Hullo..."
+[DB] Message saved successfully
+[Server] Γÿà Received: send_message
+[Server] Processing message for NPC: npc_consiglieri
+[DB] getOrCreateThread: npcUuid=npc_consiglieri, playerUuid=10
+[DB] Found existing thread: uuid=0adcc6b9-8c6c-4336-9e14-dab2c32d54c8
+[DB] saveMessage: threadUuid=0adcc6b9-8c6c-4336-9e14-dab2c32d54c8, sender=player, content="Hullo..."
+[DB] Message saved successfully
+[DB] saveMessage: threadUuid=0adcc6b9-8c6c-4336-9e14-dab2c32d54c8, sender=npc, content="Boss, good to see you. WhatΓÇÖs ..."
+[DB] Message saved successfully

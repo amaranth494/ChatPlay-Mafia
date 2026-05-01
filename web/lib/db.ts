@@ -803,6 +803,20 @@ export async function generateNpcsForUser(userId: number): Promise<void> {
 }
 
 // Get NPCs for user
+export async function getNpcByUuid(npcUuid: string): Promise<{npcId: string; name: string; role: string; personality: string} | null> {
+  const client = await pool.connect();
+  try {
+    const result = await client.query(
+      'SELECT npc_id, name, role, personality FROM npcs WHERE npc_id = $1',
+      [npcUuid]
+    );
+    if (result.rows.length === 0) return null;
+    return result.rows[0];
+  } finally {
+    client.release();
+  }
+}
+
 export async function getUserNpcs(userId: number): Promise<{npcId: string; name: string; role: string; personality: string}[]> {
   const client = await pool.connect();
   try {

@@ -195,7 +195,7 @@ export default function Home() {
       console.log(`[UI] save_message result:`, result);
       
       // Also send to socket for AI response
-      client.sendMessage(input);
+      client.sendMessage(input, activeThread.npcId);
     } catch (error) {
       console.error('[UI] Failed to send message:', error);
     }
