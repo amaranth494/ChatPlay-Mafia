@@ -91,53 +91,11 @@ io.on('connection', (socket) => {
       }
 
       case 'select_npc': {
-        console.log('[Server] select_npc START');
-        try {
-          const client = clients.get(socket.id);
-          if (!client) {
-            console.log('[Server] No client found');
-            break;
-          }
-
-          const data = event.data as { npcId?: string } | undefined;
-          if (!data || !isUuid(data.npcId)) {
-            console.log('[Server] select_npc rejected: npcId must be a UUID');
-            break;
-          }
-
-          const npcUuid = data.npcId;
-          const dbNpc = await getNpcByUuid(npcUuid);
-          if (!dbNpc) {
-            console.log('[Server] NPC not found:', npcUuid);
-            break;
-          }
-
-          // Fetch history from database
-          try {
-            const threadId = await getOrCreateThread(npcUuid, client.playerId);
-            const messages = await getMessageHistory(threadId);
-
-            socket.emit('message', {
-              type: 'thread_history',
-              data: {
-                npcId: npcUuid,
-                messages
-              }
-            });
-            console.log('[Server] Sent history with', messages.length, 'messages');
-          } catch (dbError) {
-            console.error('[Server] DB error:', dbError);
-            socket.emit('message', {
-              type: 'thread_history',
-              data: {
-                npcId: npcUuid,
-                messages: []
-              }
-            });
-          }
-
-        } catch (e: unknown) {
-          console.log('[Server] Error:', e);
+        const data = event.data as { npcId?: string } | undefined;
+        const npcUuid = data?.npcId;
+        console.log('[Server] select_npc received:', npcUuid);
+        if (!npcUuid || !isUuid(npcUuid)) {
+          console.log('[Server] select_npc rejected: valid UUID required');
         }
         break;
       }
