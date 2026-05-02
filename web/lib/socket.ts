@@ -9,6 +9,7 @@ export interface PlayerMessage {
 
 export interface NpcMessage {
   npcId: string;
+  threadUuid?: string;
   content: string;
   timestamp: string;
   sender?: 'player' | 'npc';

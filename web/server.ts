@@ -69,9 +69,14 @@ io.on('connection', (socket) => {
       case 'join_game': {
         console.log('[Server] join_game START');
         const eventData = event as { type: string; playerId?: string };
-        const clientPlayerId = eventData.playerId || `player_${socket.id.slice(0, 8)}`;
-        const familyId = `family_${socket.id.slice(0, 8)}`;
+        const clientPlayerId = eventData.playerId; // Real UUID from client — required
 
+        if (!clientPlayerId || !isUuid(clientPlayerId)) {
+          console.log('[Server] join_game rejected: playerId must be a UUID, got:', clientPlayerId);
+          break;
+        }
+
+        const familyId = `family_${clientPlayerId.slice(0, 8)}`;
         clients.set(socket.id, { playerId: clientPlayerId, familyId });
 
         // Thread list is loaded by the client from the DB (UUID-based).
@@ -167,11 +172,13 @@ io.on('connection', (socket) => {
 
         const timestamp = new Date().toISOString();
         await saveMessage(threadId, 'npc', responseText);
+        console.log('[Server] Saved NPC response to thread:', threadId);
 
         socket.emit('message', {
           type: 'npc_message',
           data: {
             npcId: npcUuid,
+            threadUuid: threadId,
             content: responseText,
             timestamp
           }

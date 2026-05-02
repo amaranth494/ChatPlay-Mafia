@@ -114,9 +114,23 @@ export default function Home() {
           content: data.content,
           timestamp: data.timestamp
         }]);
+      } else if (data.threadUuid && user?.playerUuid) {
+        // Message for a thread not currently open — persist it to DB
+        fetch('/api/register', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'save_message',
+            playerUuid: user.playerUuid,
+            npcUuid: data.npcId,
+            sender: 'npc',
+            content: data.content
+          }),
+        }).catch(() => {});
+        return;
       }
-      setThreads(prev => prev.map(t => 
-        t.npcId === data.npcId 
+      setThreads(prev => prev.map(t =>
+        t.npcId === data.npcId
           ? { ...t, unreadCount: t.unreadCount + 1, lastMessageAt: data.timestamp }
           : t
       ));
@@ -155,7 +169,9 @@ export default function Home() {
     try {
       await client.connect();
       setConnected(true);
-      client.joinGame(user?.id.toString() || 'anonymous');
+      if (user?.playerUuid) {
+        client.joinGame(user.playerUuid);
+      }
       client.send({ type: 'reset_game' });
     } catch (error) {
       console.error('Failed to connect:', error);
