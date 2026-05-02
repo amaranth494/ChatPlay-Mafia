@@ -7,7 +7,7 @@ import styles from './page.module.css';
 
 interface Message {
   id: string;
-  senderType: 'player' | 'npc';
+  senderType: 'player' | 'npc' | 'debug';
   senderName: string;
   content: string;
   timestamp: string;
@@ -124,6 +124,17 @@ export default function Home() {
         }]);
       }
 
+// Show debug prompt BETWEEN player message and AI response if debug is on
+      if (debugMode && data.systemPrompt && currentThread && data.npcId === currentThread.npcId) {
+        setMessages(prev => [...prev, {
+          id: crypto.randomUUID(),
+          senderType: 'debug' as const,
+          senderName: '',
+          content: `Prompt sent:\n${data.systemPrompt}`,
+          timestamp: data.timestamp
+        }]);
+      }
+
       if (currentThread && data.npcId === currentThread.npcId) {
         setMessages(prev => [...prev, {
           id: crypto.randomUUID(),
@@ -132,20 +143,6 @@ export default function Home() {
           content: data.content,
           timestamp: data.timestamp
         }]);
-      } else if (data.threadUuid && user?.playerUuid) {
-        // Message for a thread not currently open — persist it to DB
-        fetch('/api/register', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: 'save_message',
-            playerUuid: user.playerUuid,
-            npcUuid: data.npcId,
-            sender: 'npc',
-            content: data.content
-          }),
-        }).catch(() => {});
-        return;
       }
       setThreads(prev => prev.map(t =>
         t.npcId === data.npcId
@@ -445,7 +442,7 @@ export default function Home() {
               {messages.map(msg => (
                 <div
                   key={msg.id}
-                  className={`${styles.message} ${msg.senderType === 'player' ? styles.playerMessage : styles.npcMessage}`}
+                  className={`${styles.message} ${msg.senderType === 'player' ? styles.playerMessage : msg.senderType === 'debug' ? styles.debugMessage : styles.npcMessage}`}
                 >
                   <div className={styles.messageContent}>{msg.content}</div>
                   <div className={styles.messageTime}>
