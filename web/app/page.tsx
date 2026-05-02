@@ -23,8 +23,14 @@ export default function Home() {
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
   const [hasFamilyInfo, setHasFamilyInfo] = useState<boolean | null>(null);
+  const [debugMode, setDebugMode] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const activeThreadRef = useRef<Thread | null>(null);
+
+  useEffect(() => {
+    const stored = localStorage.getItem('chatplay_debug');
+    if (stored === 'true') setDebugMode(true);
+  }, []);
 
   // Check if user has family info
   useEffect(() => {
@@ -106,6 +112,18 @@ export default function Home() {
     client.on('npc_message', (data: NpcMessage) => {
       console.log('[Client] Received npc_message:', data);
       const currentThread = activeThreadRef.current;
+
+      // Show debug prompt as a system message in chat if debug is on
+      if (debugMode && data.systemPrompt && currentThread && data.npcId === currentThread.npcId) {
+        setMessages(prev => [...prev, {
+          id: crypto.randomUUID(),
+          senderType: 'npc' as const,
+          senderName: 'SYSTEM',
+          content: `--- PROMPT SENT TO AI ---\n${data.systemPrompt}\n---`,
+          timestamp: data.timestamp
+        }]);
+      }
+
       if (currentThread && data.npcId === currentThread.npcId) {
         setMessages(prev => [...prev, {
           id: crypto.randomUUID(),
@@ -210,8 +228,8 @@ export default function Home() {
       const result = await res.json();
       console.log(`[UI] save_message result:`, result);
       
-      // Also send to socket for AI response
-      client.sendMessage(input, activeThread.npcId);
+      // Also send to socket for AI response (pass debug flag)
+      client.sendMessage(input, activeThread.npcId, debugMode);
     } catch (error) {
       console.error('[UI] Failed to send message:', error);
     }

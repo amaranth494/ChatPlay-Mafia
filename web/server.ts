@@ -54,6 +54,7 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 const isUuid = (v: unknown): v is string => typeof v === 'string' && UUID_RE.test(v);
 
 const clients = new Map<string, ConnectedClient>();
+const debugPlayers = new Set<string>();
 
 io.on('connection', (socket) => {
   console.log('[Server] ★ Client connected:', socket.id);
@@ -112,6 +113,8 @@ io.on('connection', (socket) => {
         }
         const content = (event.data as { content: string }).content;
         const providedNpcId = (event.data as { npcId?: string }).npcId;
+        const wantsDebug = (event.data as { debug?: boolean }).debug === true;
+        const enableDebug = wantsDebug || debugPlayers.has(client.playerId);
 
         if (!isUuid(providedNpcId)) {
           console.log('[Server] send_message rejected: npcId must be a UUID, got:', providedNpcId);
@@ -174,14 +177,17 @@ io.on('connection', (socket) => {
         await saveMessage(threadId, 'npc', responseText);
         console.log('[Server] Saved NPC response to thread:', threadId);
 
+        const messageData: Record<string, unknown> = {
+          npcId: npcUuid,
+          threadUuid: threadId,
+          content: responseText,
+          timestamp
+        };
+        if (enableDebug) messageData.systemPrompt = systemPrompt;
+
         socket.emit('message', {
           type: 'npc_message',
-          data: {
-            npcId: npcUuid,
-            threadUuid: threadId,
-            content: responseText,
-            timestamp
-          }
+          data: messageData
         });
         break;
       }

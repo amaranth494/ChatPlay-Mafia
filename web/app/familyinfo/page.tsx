@@ -23,16 +23,19 @@ export default function FamilyInfoPage() {
   const [loading, setLoading] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [debugMode, setDebugMode] = useState(false);
+  const isAdmin = formData.familyName === 'Administrator';
 
   useEffect(() => {
     if (!isLoading && !isAuthenticated) {
       window.location.href = '/login';
       return;
     }
-    
     if (user?.email) {
       loadGameProfile();
     }
+    const stored = localStorage.getItem('chatplay_debug');
+    if (stored === 'true') setDebugMode(true);
   }, [isAuthenticated, isLoading, user?.email]);
 
   const loadGameProfile = async () => {
@@ -100,6 +103,11 @@ export default function FamilyInfoPage() {
       setLoading(false);
       setMessage('Failed to save profile');
     }
+  };
+
+  const handleToggleDebug = (value: boolean) => {
+    setDebugMode(value);
+    localStorage.setItem('chatplay_debug', value ? 'true' : 'false');
   };
 
   const handleDeleteFamilyInfo = async () => {
@@ -214,6 +222,50 @@ export default function FamilyInfoPage() {
           >
             {loading ? 'Saving...' : 'Save Family Info'}
           </button>
+
+          {isAdmin && (
+            <div style={{ marginTop: '2rem', padding: '1rem', border: '1px solid #555', borderRadius: '4px', background: '#111' }}>
+              <h3 style={{ color: '#00ff88', marginTop: 0, fontSize: '0.875rem', textTransform: 'uppercase', letterSpacing: '0.1em' }}>Admin Panel</h3>
+
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: '1rem' }}>
+                <span style={{ color: '#ccc', fontSize: '0.875rem' }}>Debug Mode (shows prompts in chat)</span>
+                <div style={{ display: 'flex', gap: '0.5rem' }}>
+                  <button
+                    onClick={() => handleToggleDebug(false)}
+                    style={{
+                      padding: '0.25rem 0.75rem',
+                      fontSize: '0.75rem',
+                      background: debugMode ? '#222' : '#00ff88',
+                      color: debugMode ? '#888' : '#000',
+                      border: `1px solid ${debugMode ? '#444' : '#00cc66'}`,
+                      borderRadius: '2px',
+                      cursor: 'pointer',
+                      fontFamily: 'inherit'
+                    }}
+                  >Off</button>
+                  <button
+                    onClick={() => handleToggleDebug(true)}
+                    style={{
+                      padding: '0.25rem 0.75rem',
+                      fontSize: '0.75rem',
+                      background: debugMode ? '#ff4444' : '#222',
+                      color: debugMode ? '#fff' : '#888',
+                      border: `1px solid ${debugMode ? '#cc2222' : '#444'}`,
+                      borderRadius: '2px',
+                      cursor: 'pointer',
+                      fontFamily: 'inherit'
+                    }}
+                  >On</button>
+                </div>
+              </div>
+
+              {debugMode && (
+                <p style={{ color: '#ff6666', fontSize: '0.75rem', marginTop: '0.75rem' }}>
+                  Debug active — OpenAI prompts will appear in chat.
+                </p>
+              )}
+            </div>
+          )}
 
           <a href="/">
             <button 
