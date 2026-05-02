@@ -817,6 +817,42 @@ export async function getNpcByUuid(npcUuid: string): Promise<{npcId: string; nam
   }
 }
 
+export async function getNpcWithDetails(npcUuid: string): Promise<{
+  npcId: string;
+  name: string;
+  role: string;
+  personality: string;
+  backstory: string | null;
+  speechPattern: string | null;
+  loyaltyLevel: number;
+  influenceLevel: number;
+  dangerLevel: number;
+} | null> {
+  const client = await pool.connect();
+  try {
+    const result = await client.query(
+      `SELECT
+         n.npc_id AS "npcId",
+         n.name,
+         n.role,
+         COALESCE(n.personality, '') AS personality,
+         t.backstory,
+         t.speech_pattern AS "speechPattern",
+         COALESCE(t.loyalty_level, 50) AS "loyaltyLevel",
+         COALESCE(t.influence_level, 50) AS "influenceLevel",
+         COALESCE(t.danger_level, 50) AS "dangerLevel"
+       FROM npcs n
+       LEFT JOIN npc_templates t ON t.npc_id = n.npc_id
+       WHERE n.npc_id = $1`,
+      [npcUuid]
+    );
+    if (result.rows.length === 0) return null;
+    return result.rows[0];
+  } finally {
+    client.release();
+  }
+}
+
 export async function getUserNpcs(userId: number): Promise<{npcId: string; name: string; role: string; personality: string}[]> {
   const client = await pool.connect();
   try {

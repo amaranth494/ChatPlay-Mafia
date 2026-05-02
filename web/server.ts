@@ -3,7 +3,7 @@ import { createServer } from 'http';
 import { parse } from 'url';
 import { Server as SocketIOServer } from 'socket.io';
 import OpenAI from 'openai';
-import { testConnection, initDatabase, getOrCreateThread, saveMessage, getMessageHistory, getNpcByUuid } from './lib/db';
+import { testConnection, initDatabase, getOrCreateThread, saveMessage, getMessageHistory, getNpcByUuid, getNpcWithDetails } from './lib/db';
 
 const dev = process.env.NODE_ENV !== 'production';
 const hostname = '0.0.0.0';
@@ -160,8 +160,8 @@ io.on('connection', (socket) => {
         }
 
         const npcUuid = providedNpcId;
-        const dbNpc = await getNpcByUuid(npcUuid);
-        if (!dbNpc) {
+        const npc = await getNpcWithDetails(npcUuid);
+        if (!npc) {
           console.log('[Server] NPC not found:', npcUuid);
           socket.emit('message', {
             type: 'npc_message',
@@ -174,10 +174,18 @@ io.on('connection', (socket) => {
           break;
         }
 
-        console.log('[Server] Processing message for NPC:', npcUuid, `(${dbNpc.name})`);
+        console.log('[Server] Processing message for NPC:', npcUuid, `(${npc.name})`);
 
         const threadId = await getOrCreateThread(npcUuid, client.playerId);
         await saveMessage(threadId, 'player', content);
+
+        // Build rich system prompt from all NPC details
+        let systemPrompt = `You are ${npc.name}. `;
+        systemPrompt += `Role: ${npc.role}. `;
+        if (npc.personality) systemPrompt += `Personality: ${npc.personality}. `;
+        if (npc.backstory) systemPrompt += `Backstory: ${npc.backstory}. `;
+        if (npc.speechPattern) systemPrompt += `Speech style: ${npc.speechPattern}`;
+        systemPrompt += ` You answer messages from your Boss (the player). Keep responses brief (1-2 sentences), always in character, never mention game mechanics.`;
 
         let responseText: string;
         if (process.env.OPENAI_API_KEY) {
@@ -185,7 +193,7 @@ io.on('connection', (socket) => {
             const completion = await openai.chat.completions.create({
               model: 'gpt-4o-mini',
               messages: [
-                { role: 'system', content: `You are ${dbNpc.name}, a ${dbNpc.role} in a mafia family. Your personality: ${dbNpc.personality}. You answer messages from your Boss (the player). Keep responses brief (1-2 sentences), in character, never mention game mechanics.` },
+                { role: 'system', content: systemPrompt },
                 { role: 'user', content: content }
               ],
               max_tokens: 150
